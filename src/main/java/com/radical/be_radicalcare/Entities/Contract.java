@@ -1,11 +1,9 @@
 package com.radical.be_radicalcare.Entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
 @Getter
@@ -41,9 +39,9 @@ public class Contract {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chassisNumber", referencedColumnName = "chassisNumber")
     @ToString.Exclude
-    private Product chassisNumber;
+    private Vehicle chassisNumber;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "installment_plan_id", referencedColumnName = "id", nullable = true)
+    @JoinColumn(name = "installment_plan_id", referencedColumnName = "id")
     @ToString.Exclude
     private InstallmentPlan installmentPlan;
 }

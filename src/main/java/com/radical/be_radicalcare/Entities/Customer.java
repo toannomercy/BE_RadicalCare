@@ -39,4 +39,8 @@ public class Customer {
     @ToString.Exclude
     @JsonIgnore
     private List<Contract> contracts;
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Invoice> invoices;
 }

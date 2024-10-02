@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -14,24 +14,29 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "appointment")
-public class Appointment {
+@Table(name = "invoice")
+public class Invoice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-    @Column(name = "date_created")
-    private LocalDate dateCreated;
+    @Column(name = "created_date")
+    private Date createdDate;
     @Column(name = "total_amount")
     private Double totalAmount;
-    @Column(name = "status")
-    private String status;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     @ToString.Exclude
     private Customer customer;
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id", referencedColumnName = "id")
+    @ToString.Exclude
+    private Employee employee;
+
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
-    private List<AppointmentDetail> appointmentDetails;
+    private List<InvoiceDetail> invoiceDetails;
 }

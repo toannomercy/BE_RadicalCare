@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Table(name = "image")
-public class Image {
+public class VehicleImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -20,5 +20,5 @@ public class Image {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chassisNumber", referencedColumnName = "chassisNumber")
     @ToString.Exclude
-    private Product chassisNumber;
+    private Vehicle chassisNumber;
 }

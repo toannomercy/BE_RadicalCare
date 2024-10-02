@@ -30,13 +30,13 @@ public class Employee{
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
-    private List<Appointment> appointments;
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @JsonIgnore
     private List<Contract> contracts;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ToString.Exclude
     private User userId;
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Invoice> invoices;
 }

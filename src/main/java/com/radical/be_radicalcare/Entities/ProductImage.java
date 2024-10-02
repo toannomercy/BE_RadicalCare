@@ -9,16 +9,16 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "warranty_history")
-public class WarrantyHistory {
+@Table(name = "product_image")
+public class ProductImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-    private String warrantyType;
-    private String warrantyDescription;
+    @Column(name = "imageUrl", nullable = false)
+    private String imageUrl;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chassisNumber", referencedColumnName = "chassisNumber")
+    @JoinColumn(name = "productId", referencedColumnName = "id")
     @ToString.Exclude
-    private Vehicle chassisNumber;
+    private Product productId;
 }

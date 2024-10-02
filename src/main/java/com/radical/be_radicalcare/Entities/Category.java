@@ -25,7 +25,7 @@ public class Category {
     @OneToMany(mappedBy = "categoryId", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
-    private List<Product> products;
+    private List<Vehicle> vehicles;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warrantyInfoId", referencedColumnName = "id")
     @ToString.Exclude

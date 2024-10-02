@@ -29,12 +29,17 @@ public class CostTable {
     @OneToMany(mappedBy = "costId", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
-    private List<Product> products;
+    private List<Vehicle> vehicles;
     @OneToMany(mappedBy = "costId", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
     private List<MotorService> motorServices;
+    @OneToMany(mappedBy = "costId", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Product> products;
     public double getPrice() {
         return baseCost;
     }
+
 }

@@ -31,5 +31,5 @@ public class Supplier {
     @OneToMany(mappedBy = "supplierId", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
-    private List<Product> products;
+    private List<Vehicle> vehicles;
 }
