@@ -25,13 +25,13 @@ public class Product {
     @Column(name = "brand")
     private String brand;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "productId", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
     private List<ProductImage> productImages;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cost_id", referencedColumnName = "id")
+    @JoinColumn(name = "costId", referencedColumnName = "costId")
     @ToString.Exclude
     private CostTable costTable;
 

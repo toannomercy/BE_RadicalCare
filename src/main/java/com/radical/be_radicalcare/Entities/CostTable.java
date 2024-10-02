@@ -34,7 +34,7 @@ public class CostTable {
     @ToString.Exclude
     @JsonIgnore
     private List<MotorService> motorServices;
-    @OneToMany(mappedBy = "costId", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "costTable", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
     private List<Product> products;
