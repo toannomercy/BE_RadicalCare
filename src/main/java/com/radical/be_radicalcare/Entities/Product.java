@@ -31,7 +31,7 @@ public class Product {
     private List<ProductImage> productImages;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "costId", referencedColumnName = "costId")
+    @JoinColumn(name = "cost_id", referencedColumnName = "cost_id")
     @ToString.Exclude
     private CostTable costTable;
 

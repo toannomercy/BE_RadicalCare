@@ -18,7 +18,7 @@ public class WarrantyHistory {
     private String warrantyType;
     private String warrantyDescription;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chassisNumber", referencedColumnName = "chassisNumber")
+    @JoinColumn(name = "chassis_number", referencedColumnName = "chassis_number")
     @ToString.Exclude
     private Vehicle chassisNumber;
 }

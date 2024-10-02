@@ -16,18 +16,18 @@ import java.util.List;
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "categoryId")
+    @Column(name = "category_id")
     private Long id;
-    @Column(name = "categoryName", length = 50, nullable = false)
+    @Column(name = "category_name", length = 50, nullable = false)
     private String categoryName;
-    @Column(name = "isDeleted")
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
     @OneToMany(mappedBy = "categoryId", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore
     private List<Vehicle> vehicles;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "warrantyInfoId", referencedColumnName = "id")
+    @JoinColumn(name = "warranty_info_id", referencedColumnName = "id")
     @ToString.Exclude
     private WarrantyInfo warrantyInfo;
 }
