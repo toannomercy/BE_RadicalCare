@@ -4,10 +4,7 @@ import com.radical.be_radicalcare.Services.CategoryService;
 import com.radical.be_radicalcare.ViewModels.CategoryGetVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,5 +21,12 @@ public class CategoryController {
                 .stream()
                 .map(CategoryGetVm::from)
                 .toList());
+    }
+
+    @GetMapping("/category/{id}")
+    public ResponseEntity<CategoryGetVm> getCategoryById(@PathVariable Long id) {
+        return ResponseEntity.ok(categoryService.getCategoryById(id)
+                .map(CategoryGetVm::from)
+                .orElse(null));
     }
 }
