@@ -3,6 +3,8 @@ package com.radical.be_radicalcare.Entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.List;
 
@@ -26,8 +28,10 @@ public class Category {
     @ToString.Exclude
     @JsonIgnore
     private List<Vehicle> vehicles;
-    @OneToOne(fetch = FetchType.LAZY)
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warranty_info_id", referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     @ToString.Exclude
     private WarrantyInfo warrantyInfo;
 }
