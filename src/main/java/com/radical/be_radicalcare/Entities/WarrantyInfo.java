@@ -20,10 +20,6 @@ public class WarrantyInfo {
     private Long id;
     @Column(name = "warranty_type")
     private String warrantyType;
-    @Column(name = "warranty_start_date")
-    private Date warrantyStartDate;
-    @Column(name = "warranty_end_date")
-    private Date warrantyEndDate;
     @Column(name = "warranty_description")
     private String warrantyDescription;
     @OneToOne(fetch = FetchType.LAZY)
