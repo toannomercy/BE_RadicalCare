@@ -10,5 +10,4 @@ public class BeRadicalCareApplication {
 
         SpringApplication.run(BeRadicalCareApplication.class, args);
     }
-
 }

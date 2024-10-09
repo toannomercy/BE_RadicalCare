@@ -17,17 +17,17 @@ import java.util.List;
 public class MotorService {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "serviceId")
+    @Column(name = "service_id")
     private Long serviceId;
-    @Column(name = "serviceName", length = 50, nullable = false)
+    @Column(name = "service_name", length = 50, nullable = false)
     private String serviceName;
-    @Column(name = "serviceDescription", nullable = false)
+    @Column(name = "service_description", nullable = false)
     private String serviceDescription;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "costId", referencedColumnName = "costId")
+    @JoinColumn(name = "cost_id", referencedColumnName = "cost_id")
     @ToString.Exclude
     private CostTable costId;
-    @Column(name = "isDeleted")
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
     @OneToMany(mappedBy = "motorService", cascade = CascadeType.ALL)
     @ToString.Exclude

@@ -1,5 +1,6 @@
 package com.radical.be_radicalcare.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,14 +21,11 @@ public class WarrantyInfo {
     private Long id;
     @Column(name = "warranty_type")
     private String warrantyType;
-    @Column(name = "warranty_start_date")
-    private Date warrantyStartDate;
-    @Column(name = "warranty_end_date")
-    private Date warrantyEndDate;
     @Column(name = "warranty_description")
     private String warrantyDescription;
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "id")
+
+    @OneToMany(mappedBy = "warrantyInfo", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @ToString.Exclude
-    private Category category;
+    @JsonIgnore
+    private List<Category> category;
 }

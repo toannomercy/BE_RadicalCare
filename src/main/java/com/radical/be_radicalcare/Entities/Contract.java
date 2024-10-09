@@ -37,7 +37,7 @@ public class Contract {
     @ToString.Exclude
     private Employee employee;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chassisNumber", referencedColumnName = "chassisNumber")
+    @JoinColumn(name = "chassis_number", referencedColumnName = "chassis_number")
     @ToString.Exclude
     private Vehicle chassisNumber;
     @OneToOne(fetch = FetchType.LAZY)

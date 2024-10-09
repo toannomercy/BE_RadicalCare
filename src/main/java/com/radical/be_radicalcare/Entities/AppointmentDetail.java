@@ -25,7 +25,7 @@ public class AppointmentDetail {
     @Column(name = "service_cost")
     private Double serviceCost;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "serviceId", referencedColumnName = "serviceId")
+    @JoinColumn(name = "service_id", referencedColumnName = "service_id")
     @ToString.Exclude
     private MotorService motorService;
     @ManyToOne(fetch = FetchType.LAZY)

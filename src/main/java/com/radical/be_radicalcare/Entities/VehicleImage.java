@@ -15,10 +15,10 @@ public class VehicleImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-    @Column(name = "imageUrl", nullable = false)
+    @Column(name = "image_url", nullable = false)
     private String imageUrl;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chassisNumber", referencedColumnName = "chassisNumber")
+    @JoinColumn(name = "chassis_number", referencedColumnName = "chassis_number")
     @ToString.Exclude
     private Vehicle chassisNumber;
 }

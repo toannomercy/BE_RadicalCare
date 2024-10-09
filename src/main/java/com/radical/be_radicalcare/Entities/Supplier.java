@@ -16,17 +16,17 @@ import java.util.List;
 public class Supplier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "supplierId")
+    @Column(name = "supplier_id")
     private Long supplierId;
-    @Column(name = "supplierName", length = 50, nullable = false)
+    @Column(name = "supplier_name", length = 50, nullable = false)
     private String supplierName;
-    @Column(name = "supplierAddress", nullable = false)
+    @Column(name = "supplier_address", nullable = false)
     private String supplierAddress;
-    @Column(name = "supplierPhone", nullable = false)
+    @Column(name = "supplier_phone", nullable = false)
     private String supplierPhone;
-    @Column(name = "supplierEmail",nullable = false)
+    @Column(name = "supplier_email",nullable = false)
     private String supplierEmail;
-    @Column(name = "isDeleted")
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
     @OneToMany(mappedBy = "supplierId", cascade = CascadeType.ALL)
     @ToString.Exclude

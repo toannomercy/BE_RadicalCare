@@ -15,10 +15,10 @@ public class ProductImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-    @Column(name = "imageUrl", nullable = false)
+    @Column(name = "image_url", nullable = false)
     private String imageUrl;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "productId", referencedColumnName = "id")
+    @JoinColumn(name = "product_id", referencedColumnName = "id")
     @ToString.Exclude
     private Product productId;
 }

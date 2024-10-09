@@ -18,13 +18,13 @@ import java.util.List;
 public class CostTable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "costId")
+    @Column(name = "cost_id")
     private Long costId;
-    @Column(name = "dateCreated")
+    @Column(name = "date_created")
     private LocalDate dateCreated;
-    @Column(name = "baseCost")
+    @Column(name = "base_cost")
     private Double baseCost;
-    @Column(name = "isDeleted")
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
     @OneToMany(mappedBy = "costId", cascade = CascadeType.ALL)
     @ToString.Exclude

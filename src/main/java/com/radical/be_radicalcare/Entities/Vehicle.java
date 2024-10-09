@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
 @Table(name = "vehicle")
 public class Vehicle {
     @Id
-    @Column(length = 17)
+    @Column(name= "chassis_number",length = 17)
     private String chassisNumber;
-    @Column(name = "vehicleName", length = 50, nullable = false)
-    @Size(min = 1, max = 50, message = "vehicleName must be between 1 and 50 characters")
-    @NotBlank(message = "vehicleName must not be blank")
+    @Column(name = "vehicle_name", length = 50, nullable = false)
+    @Size(min = 1, max = 50, message = "Vehicle Name must be between 1 and 50 characters")
+    @NotBlank(message = "Vehicle Name must not be blank")
     private String vehicleName;
-    @Column(name = "importDate")
+    @Column(name = "import_date")
     private LocalDate importDate;
     @Column(name = "version", length = 50, nullable = false)
     @Size(min = 1, max = 50, message = "version must be between 1 and 50 characters")
@@ -40,20 +40,20 @@ public class Vehicle {
     @Size(min = 1, max = 50, message = "segment must be between 1 and 50 characters")
     @NotBlank(message = "segment must not be blank")
     private String segment;
-    @Column(name = "isDeleted")
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
-    @Column(name = "isAvailable")
+    @Column(name = "is_available")
     private Boolean sold;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "costId", referencedColumnName = "costId")
+    @JoinColumn(name = "cost_id", referencedColumnName = "cost_id")
     @ToString.Exclude
     private CostTable costId;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoryId", referencedColumnName = "categoryId")
+    @JoinColumn(name = "category_id", referencedColumnName = "category_id")
     @ToString.Exclude
     private Category categoryId;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplierId", referencedColumnName = "supplierId")
+    @JoinColumn(name = "supplier_id", referencedColumnName = "supplier_id")
     @ToString.Exclude
     private Supplier supplierId;
     @OneToMany(mappedBy = "chassisNumber", cascade = CascadeType.ALL)
