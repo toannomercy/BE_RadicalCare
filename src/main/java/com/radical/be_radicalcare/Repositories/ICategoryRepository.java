@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ICategoryRepository extends JpaRepository<Category, Long> {
-//    List<Category> findByIsDeletedFalse();
+
 }
