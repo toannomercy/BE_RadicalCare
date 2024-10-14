@@ -3,7 +3,6 @@ package com.radical.be_radicalcare.Services;
 
 import com.radical.be_radicalcare.Entities.CostTable;
 import com.radical.be_radicalcare.Entities.MotorService;
-import com.radical.be_radicalcare.Entities.WarrantyInfo;
 import com.radical.be_radicalcare.Repositories.ICostTableRepository;
 import com.radical.be_radicalcare.Repositories.IMotorServicesRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +20,6 @@ public class MotorServicesService {
 
     private final IMotorServicesRepository motorServicesRepository;
     private final ICostTableRepository costTableRepository;
-    private final ProductService productService;
-
     public List<MotorService> getAllMotorServices(){return motorServicesRepository.findAll();}
 
     public Optional<MotorService> getMotorServiceById(Long id){
