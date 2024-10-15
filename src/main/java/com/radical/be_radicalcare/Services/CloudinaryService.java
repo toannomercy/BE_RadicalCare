@@ -38,25 +38,18 @@ public class CloudinaryService {
         return uploadResult;
     }
 
-    public Map delete(String publicId) throws IOException {
-        Map deleteResult;
+    public void delete(String imageUrl) {
+        String publicId = extractPublicId(imageUrl);
         try {
-            deleteResult = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            Map<String, Object> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         } catch (IOException e) {
-            throw new IOException("Could not delete file from Cloudinary: " + e.getMessage());
+            e.printStackTrace();
         }
-        return deleteResult;
     }
 
-    public Map update(String publicId, MultipartFile file) throws IOException {
-        Map updateResult;
-        try {
-            updateResult = cloudinary.uploader().upload(file.getBytes(),
-                    ObjectUtils.asMap("public_id", publicId));
-        } catch (IOException e) {
-            throw new IOException("Could not update file on Cloudinary: " + e.getMessage());
-        }
-        return updateResult;
+    private String extractPublicId(String url) {
+        return url.substring(url.lastIndexOf('/') + 1, url.lastIndexOf('.'));
     }
+
 
 }
