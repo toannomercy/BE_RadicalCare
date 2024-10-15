@@ -60,7 +60,6 @@ public class ProductController {
                                            @RequestPart("images") List<MultipartFile> images) {
         try {
             productService.addProduct(productPostVm.toProduct(), images);
-
             Map<String, Object> response = new HashMap<>();
             response.put("status", 201);
             response.put("message", "Product created successfully");

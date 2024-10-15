@@ -2,7 +2,6 @@ package com.radical.be_radicalcare.ViewModels;
 
 import com.radical.be_radicalcare.Entities.CostTable;
 import com.radical.be_radicalcare.Entities.Product;
-import com.radical.be_radicalcare.Services.CostTableService;
 import lombok.Builder;
 
 @Builder

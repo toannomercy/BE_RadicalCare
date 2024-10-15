@@ -42,7 +42,7 @@ public class Vehicle {
     private String segment;
     @Column(name = "is_deleted")
     private Boolean isDeleted;
-    @Column(name = "is_available")
+    @Column(name = "sold")
     private Boolean sold;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cost_id", referencedColumnName = "cost_id")

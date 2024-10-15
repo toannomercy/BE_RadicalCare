@@ -47,7 +47,6 @@ public class ProductService {
         for (MultipartFile image : images) {
             Map uploadResult = cloudinaryService.upload(image);
             String imageUrl = (String) uploadResult.get("url");
-
             ProductImage productImage = new ProductImage();
             productImage.setImageUrl(imageUrl);
             productImage.setProductId(savedProduct);
