@@ -3,8 +3,10 @@ package com.radical.be_radicalcare.Services;
 import com.radical.be_radicalcare.Entities.*;
 import com.radical.be_radicalcare.Repositories.IVehicleImageRepository;
 import com.radical.be_radicalcare.Repositories.IVehicleRepository;
+import com.radical.be_radicalcare.Specifications.VehicleSpecification;
 import com.radical.be_radicalcare.ViewModels.VehiclePostVm;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(isolation = Isolation.SERIALIZABLE, rollbackFor = {Exception.class, Throwable.class})

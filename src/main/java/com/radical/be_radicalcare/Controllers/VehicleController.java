@@ -1,9 +1,11 @@
 package com.radical.be_radicalcare.Controllers;
 
+import com.radical.be_radicalcare.Entities.Vehicle;
 import com.radical.be_radicalcare.Services.VehicleService;
 import com.radical.be_radicalcare.ViewModels.VehicleGetVm;
 import com.radical.be_radicalcare.ViewModels.VehiclePostVm;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -103,4 +105,6 @@ public class VehicleController {
 
         return ResponseEntity.ok(response);
     }
+
 }
+
