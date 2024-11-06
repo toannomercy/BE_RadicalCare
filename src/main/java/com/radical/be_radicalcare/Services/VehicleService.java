@@ -120,5 +120,8 @@ public class VehicleService {
 
         vehicleRepository.delete(vehicle);
     }
+    public List<Vehicle> getVehiclesByIds(List<String> ids) {
+        return vehicleRepository.findAllById(ids);
+    }
 
 }

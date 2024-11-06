@@ -1,9 +1,11 @@
 package com.radical.be_radicalcare.Services;
 
+import com.radical.be_radicalcare.Specifications.VehicleSpecification;
 import com.radical.be_radicalcare.ViewModels.FilterGetVm;
 import com.radical.be_radicalcare.Entities.Vehicle;
 import com.radical.be_radicalcare.Repositories.IVehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,34 +18,21 @@ import java.util.stream.Collectors;
 public class FilterService {
     private final IVehicleRepository vehicleRepository;
 
-    public List<Vehicle> filterVehicles(
-            String segment, String color, Boolean sold, Integer categoryId, Double minCost, Double maxCost) {
-        List<Vehicle> allVehicles = vehicleRepository.findAll();
+    public List<FilterGetVm> filterVehicles(
+            List<String> segments, List<String> colors, Boolean sold,
+            List<Integer> categoryIds, Double minCost, Double maxCost) {
 
-        // Kiểm tra nếu allVehicles là null
-        if (allVehicles == null) {
-            System.out.println("No vehicles found in repository.");
-            allVehicles = new ArrayList<>();  // Khởi tạo danh sách trống nếu null
-        }
+        Specification<Vehicle> spec = Specification
+                .where(VehicleSpecification.hasSegmentIn(segments))
+                .and(VehicleSpecification.hasColorIn(colors))
+                .and(VehicleSpecification.isSold(sold))
+                .and(VehicleSpecification.hasCategoryIdIn(categoryIds))
+                .and(VehicleSpecification.hasCostBetween(minCost, maxCost));
 
-        System.out.println("Total Vehicles before filter: " + allVehicles.size());
+        List<Vehicle> vehicles = vehicleRepository.findAll(spec);
 
-        return allVehicles.stream()
-                .filter(vehicle -> (segment == null || vehicle.getSegment().equalsIgnoreCase(segment)))
-                .filter(vehicle -> (color == null || vehicle.getColor().equalsIgnoreCase(color)))
-                .filter(vehicle -> (sold == null || vehicle.getSold() == sold))
-                .filter(vehicle -> {
-                    boolean result = (categoryId == null ||
-                            (vehicle.getCategoryId() != null && vehicle.getCategoryId().getId().intValue() == categoryId));
-                    if (!result) {
-                        System.out.println("Filtered out by category: " +
-                                vehicle.getChassisNumber() + " | Category ID: " +
-                                (vehicle.getCategoryId() != null ? vehicle.getCategoryId().getId() : "null"));
-                    }
-                    return result;
-                })
-                .filter(vehicle -> (minCost == null || vehicle.getCostId().getBaseCost() >= minCost))
-                .filter(vehicle -> (maxCost == null || vehicle.getCostId().getBaseCost() <= maxCost))
+        return vehicles.stream()
+                .map(FilterGetVm::from)
                 .collect(Collectors.toList());
     }
 

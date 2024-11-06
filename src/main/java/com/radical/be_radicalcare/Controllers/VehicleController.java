@@ -105,6 +105,20 @@ public class VehicleController {
 
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/vehicles/by-ids")
+    public ResponseEntity<?> getVehiclesByIds(@RequestBody List<String> ids) {
+        List<VehicleGetVm> vehicles = vehicleService.getVehiclesByIds(ids)
+                .stream()
+                .map(VehicleGetVm::fromEntity)
+                .toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Vehicles retrieved successfully");
+        response.put("data", vehicles);
+
+        return ResponseEntity.ok(response);
+    }
 
 }
 
