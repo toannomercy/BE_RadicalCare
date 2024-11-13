@@ -5,13 +5,13 @@ import com.radical.be_radicalcare.Entities.WarrantyInfo;
 import com.radical.be_radicalcare.Repositories.ICategoryRepository;
 import com.radical.be_radicalcare.Repositories.IWarrantyInfoRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +46,12 @@ public class CategoryService {
 
         categoryRepository.save(existingCategory);
     }
-
+    public List<Long> getCategoryIdsByName(String name) {
+        return categoryRepository.findByCategoryNameContainingIgnoreCase(name)
+                .stream()
+                .map(Category::getId)
+                .collect(Collectors.toList());
+    }
     public void deleteCategoryById(Long categoryId) {
         categoryRepository.deleteById(categoryId);
     }
