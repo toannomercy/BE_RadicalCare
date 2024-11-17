@@ -56,6 +56,8 @@ public class Vehicle {
     @JoinColumn(name = "supplier_id", referencedColumnName = "supplier_id")
     @ToString.Exclude
     private Supplier supplierId;
+    @Column(name = "description")
+    private String description;
     @OneToMany(mappedBy = "chassisNumber", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore

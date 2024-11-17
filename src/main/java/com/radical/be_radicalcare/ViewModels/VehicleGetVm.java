@@ -22,6 +22,7 @@ public record VehicleGetVm(
         Long costId,
         Long categoryId,
         Long supplierId,
+        String description,
         List<String> warrantyHistory,
         List<String> imageUrls
 ) {
@@ -33,6 +34,7 @@ public record VehicleGetVm(
                 .version(vehicle.getVersion())
                 .color(vehicle.getColor())
                 .segment(vehicle.getSegment())
+                .description(vehicle.getDescription())
                 .isDeleted(vehicle.getIsDeleted())
                 .sold(vehicle.getSold())
                 .costId(vehicle.getCostId() != null ? vehicle.getCostId().getCostId() : null)

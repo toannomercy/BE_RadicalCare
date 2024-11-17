@@ -20,7 +20,9 @@ public class MotorServicesService {
 
     private final IMotorServicesRepository motorServicesRepository;
     private final ICostTableRepository costTableRepository;
-    public List<MotorService> getAllMotorServices(){return motorServicesRepository.findAll();}
+    public List<MotorService> getAllMotorServices() {
+        return motorServicesRepository.findAll();
+    }
 
     public Optional<MotorService> getMotorServiceById(Long id){
         return motorServicesRepository.findById(id);
@@ -38,9 +40,11 @@ public class MotorServicesService {
         existingMotorService.setServiceDescription(motorService.getServiceDescription());
 
         CostTable costTable = costTableRepository.findById(motorService.getCostId().getCostId())
-                .orElseThrow(() -> new RuntimeException("CostTable not found"));
+                .orElseThrow(() -> new RuntimeException("CostID not found"));
         existingMotorService.setCostId(costTable);
     }
 
-    public void deletedMotorServiceById(Long motorServiceId){motorServicesRepository.deleteById(motorServiceId);}
+    public void deletedMotorServiceById(Long motorServiceId) {
+        motorServicesRepository.deleteById(motorServiceId);
+    }
 }

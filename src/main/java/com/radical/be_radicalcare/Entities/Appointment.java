@@ -22,8 +22,6 @@ public class Appointment {
     private Long id;
     @Column(name = "date_created")
     private LocalDate dateCreated;
-    @Column(name = "total_amount")
-    private Double totalAmount;
     @Column(name = "status")
     private String status;
     @ManyToOne(fetch = FetchType.LAZY)
