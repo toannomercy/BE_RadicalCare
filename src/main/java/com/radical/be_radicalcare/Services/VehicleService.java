@@ -3,21 +3,22 @@ package com.radical.be_radicalcare.Services;
 import com.radical.be_radicalcare.Entities.*;
 import com.radical.be_radicalcare.Repositories.IVehicleImageRepository;
 import com.radical.be_radicalcare.Repositories.IVehicleRepository;
-import com.radical.be_radicalcare.Specifications.VehicleSpecification;
 import com.radical.be_radicalcare.ViewModels.VehiclePostVm;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.data.domain.Pageable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(isolation = Isolation.SERIALIZABLE, rollbackFor = {Exception.class, Throwable.class})
@@ -30,8 +31,9 @@ public class VehicleService {
     private final CostTableService costTableService;
     private final CategoryService categoryService;
 
-    public List<Vehicle> getAllVehicles() {
-        return vehicleRepository.findAll();
+    public Page<Vehicle> getAllVehicles(int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        return vehicleRepository.findAll(pageable);
     }
 
     public Optional<Vehicle> getVehicleById(String chassisNumber) {
@@ -54,14 +56,7 @@ public class VehicleService {
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
 
-        for (MultipartFile img : images) {
-            Map uploadResult = cloudinaryService.upload(img);
-            String imageUrl = (String) uploadResult.get("url");
-            VehicleImage vehicleImage = new VehicleImage();
-            vehicleImage.setImageUrl(imageUrl);
-            vehicleImage.setChassisNumber(savedVehicle);
-            vehicleImageRepository.save(vehicleImage);
-        }
+        saveImages(images, savedVehicle);
     }
 
 
@@ -95,17 +90,21 @@ public class VehicleService {
                 vehicleImageRepository.delete(image);
             }
 
-            for (MultipartFile newImage : newImages) {
-                Map uploadResult = cloudinaryService.upload(newImage);
-                String imageUrl = (String) uploadResult.get("url");
-                VehicleImage vehicleImage = new VehicleImage();
-                vehicleImage.setImageUrl(imageUrl);
-                vehicleImage.setChassisNumber(vehicle);
-                vehicleImageRepository.save(vehicleImage);
-            }
+            saveImages(newImages, vehicle);
         }
 
         vehicleRepository.save(vehicle);
+    }
+
+    private void saveImages(List<MultipartFile> newImages, Vehicle vehicle) throws IOException {
+        for (MultipartFile newImage : newImages) {
+            Map uploadResult = cloudinaryService.upload(newImage);
+            String imageUrl = (String) uploadResult.get("url");
+            VehicleImage vehicleImage = new VehicleImage();
+            vehicleImage.setImageUrl(imageUrl);
+            vehicleImage.setChassisNumber(vehicle);
+            vehicleImageRepository.save(vehicleImage);
+        }
     }
 
     public void deleteVehicle(String chassisNumber) {

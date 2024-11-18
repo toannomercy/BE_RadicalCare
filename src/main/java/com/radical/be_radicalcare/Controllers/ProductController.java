@@ -2,11 +2,11 @@ package com.radical.be_radicalcare.Controllers;
 
 
 import com.radical.be_radicalcare.Entities.Product;
-import com.radical.be_radicalcare.Services.CostTableService;
 import com.radical.be_radicalcare.Services.ProductService;
 import com.radical.be_radicalcare.ViewModels.ProductGetVm;
 import com.radical.be_radicalcare.ViewModels.ProductPostVm;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,23 +15,33 @@ import java.util.*;
 
 import java.util.List;
 
+
 @RestController
 @CrossOrigin("*")
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class ProductController {
     private final ProductService productService;
+
     @GetMapping("/product")
-    public ResponseEntity<?> getAllProducts() {
-        List<ProductGetVm> products = productService.getAllProducts()
+    public ResponseEntity<?> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy) {
+
+        Page<Product> productPage = productService.getAllProducts(page, size, sortBy);
+        List<ProductGetVm> products = productPage
                 .stream()
                 .map(ProductGetVm::from)
                 .toList();
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
-        response.put("message", "Categories retrieved successfully");
+        response.put("message", "Products retrieved successfully");
         response.put("data", products);
+        response.put("currentPage", productPage.getNumber());
+        response.put("totalItems", productPage.getTotalElements());
+        response.put("totalPages", productPage.getTotalPages());
 
         return ResponseEntity.ok(response);
     }

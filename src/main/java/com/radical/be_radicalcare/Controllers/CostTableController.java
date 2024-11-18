@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/")
+@RequestMapping("/api/v1")
 @CrossOrigin("*")
 @RequiredArgsConstructor
 public class CostTableController {
@@ -44,7 +44,7 @@ public class CostTableController {
                 .map(costTable -> {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", 200);
-                    response.put("message", "WarrantyInfo retrieved successfully");
+                    response.put("message", "CostTable retrieved successfully");
                     response.put("data", CostTableGetVm.from(costTable));
                     return ResponseEntity.ok(response);
                 })

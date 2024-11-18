@@ -7,6 +7,10 @@ import com.radical.be_radicalcare.Repositories.IProductImageRepository;
 import com.radical.be_radicalcare.Repositories.IProductRepository;
 import com.radical.be_radicalcare.ViewModels.ProductPostVm;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -27,8 +31,9 @@ public class ProductService {
     private final CloudinaryService cloudinaryService;
     private final IProductImageRepository productImageRepository;
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public Page<Product> getAllProducts(int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        return productRepository.findAll(pageable);
     }
 
     public Optional<Product> getProductById(Long productId) {
@@ -44,6 +49,10 @@ public class ProductService {
             product.setCostTable(costTable);
         }
 
+        saveImages(images, savedProduct);
+    }
+
+    private void saveImages(List<MultipartFile> images, Product savedProduct) throws IOException {
         for (MultipartFile image : images) {
             Map uploadResult = cloudinaryService.upload(image);
             String imageUrl = (String) uploadResult.get("url");
@@ -73,14 +82,7 @@ public class ProductService {
             productImageRepository.delete(existingImage);
         }
 
-        for (MultipartFile newImage : newImages) {
-            Map uploadResult = cloudinaryService.upload(newImage);
-            String imageUrl = (String) uploadResult.get("url");
-            ProductImage productImage = new ProductImage();
-            productImage.setImageUrl(imageUrl);
-            productImage.setProductId(existingProduct);
-            productImageRepository.save(productImage);
-        }
+        saveImages(newImages, existingProduct);
 
         productRepository.save(existingProduct);
     }

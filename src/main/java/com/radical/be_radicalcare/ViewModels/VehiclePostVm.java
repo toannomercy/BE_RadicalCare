@@ -16,6 +16,7 @@ public record VehiclePostVm(
         String version,
         String color,
         String segment,
+        String description,
         Long costId,
         Long categoryId,
         Long supplierId,
@@ -30,6 +31,7 @@ public record VehiclePostVm(
         vehicle.setVersion(this.version);
         vehicle.setColor(this.color);
         vehicle.setSegment(this.segment);
+        vehicle.setDescription(this.description);
         vehicle.setIsDeleted(this.isDeleted);
         vehicle.setSold(this.sold);
 

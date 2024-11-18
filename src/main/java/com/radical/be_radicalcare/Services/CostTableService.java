@@ -17,18 +17,21 @@ import java.util.Optional;
 public class CostTableService {
     private final ICostTableRepository costTableRepository;
 
-    public List<CostTable> getAllCostTable(){return costTableRepository.findAll();}
+    public List<CostTable> getAllCostTable() {
+        return costTableRepository.findAll();
+    }
 
-    public Optional<CostTable> getCostTableById(Long costTableId){
+    public Optional<CostTable> getCostTableById(Long costTableId) {
         return costTableRepository.findById(costTableId);
     }
 
-    public void addCostTable(CostTable costTable){costTableRepository.save(costTable);
+    public void addCostTable(CostTable costTable) {
+        costTableRepository.save(costTable);
     }
 
-    public void updateCostTable(CostTable costTable){
+    public void updateCostTable(CostTable costTable) {
         CostTable existingCostTable = costTableRepository.findById(costTable.getCostId())
-                .orElseThrow(() -> new RuntimeException("CostTableId not found"));
+                .orElseThrow(() -> new RuntimeException("costTableId not found"));
 
         existingCostTable.setDateCreated(costTable.getDateCreated());
         existingCostTable.setBaseCost(costTable.getBaseCost());

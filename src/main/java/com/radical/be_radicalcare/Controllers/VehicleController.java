@@ -5,7 +5,7 @@ import com.radical.be_radicalcare.Services.VehicleService;
 import com.radical.be_radicalcare.ViewModels.VehicleGetVm;
 import com.radical.be_radicalcare.ViewModels.VehiclePostVm;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,8 +23,13 @@ public class VehicleController {
     private final VehicleService vehicleService;
 
     @GetMapping("/vehicle")
-    public ResponseEntity<?> getAllVehicles() {
-        List<VehicleGetVm> vehicles = vehicleService.getAllVehicles()
+    public ResponseEntity<?> getAllVehicles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "chassisNumber") String sortBy) {
+
+        Page<Vehicle> vehiclePage = vehicleService.getAllVehicles(page, size, sortBy);
+        List<VehicleGetVm> vehicles = vehiclePage
                 .stream()
                 .map(VehicleGetVm::fromEntity)
                 .toList();
@@ -33,6 +38,9 @@ public class VehicleController {
         response.put("status", 200);
         response.put("message", "Vehicles retrieved successfully");
         response.put("data", vehicles);
+        response.put("currentPage", vehiclePage.getNumber());
+        response.put("totalItems", vehiclePage.getTotalElements());
+        response.put("totalPages", vehiclePage.getTotalPages());
 
         return ResponseEntity.ok(response);
     }
@@ -121,4 +129,3 @@ public class VehicleController {
     }
 
 }
-
