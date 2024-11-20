@@ -25,6 +25,11 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -85,31 +90,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(@NotNull HttpSecurity http) throws Exception {
         return http
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .cors(withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/v1/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").permitAll()
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/products").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/orders/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasAnyAuthority("USER", "ADMIN")
                         .anyRequest().authenticated()
-                ).logout(logout -> logout
+                )
+                .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login")
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .permitAll()
-                ).formLogin(formLogin -> formLogin
+                )
+                .formLogin(formLogin -> formLogin
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .defaultSuccessUrl("/")
                         .failureUrl("/login?error")
                         .permitAll()
-                ).oauth2Login(
+                )
+                .oauth2Login(
                         oauth2Login -> oauth2Login
                                 .loginPage("/login")
                                 .failureUrl("/login?error")
@@ -118,16 +124,20 @@ public class SecurityConfig {
                                                 .userService(oAuthService)
                                 )
                                 .permitAll()
-                ).rememberMe(rememberMe -> rememberMe
+                )
+                .rememberMe(rememberMe -> rememberMe
                         .key("radical")
                         .rememberMeCookieName("radical")
                         .tokenValiditySeconds(24 * 60 * 60)
                         .userDetailsService(userDetailsService())
-                ).exceptionHandling(exceptionHandling ->
+                )
+                .exceptionHandling(exceptionHandling ->
                         exceptionHandling.accessDeniedPage("/403")
-                ).sessionManagement(sessionManagement ->
+                )
+                .sessionManagement(sessionManagement ->
                         sessionManagement.maximumSessions(1).expiredUrl("/login")
-                ).httpBasic(httpBasic ->
+                )
+                .httpBasic(httpBasic ->
                         httpBasic.realmName("radical")
                 )
                 .build();

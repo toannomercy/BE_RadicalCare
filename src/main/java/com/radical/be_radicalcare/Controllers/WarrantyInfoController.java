@@ -6,6 +6,7 @@ import com.radical.be_radicalcare.ViewModels.WarrantyInfoGetVm;
 import com.radical.be_radicalcare.ViewModels.WarrantyInfoPostVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -14,11 +15,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 public class WarrantyInfoController {
     private final WarrantyInfoService warrantyInfoService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/warranty-info")
     public ResponseEntity<?> getAllWarrantyInfos() {
         List<WarrantyInfoGetVm> warrantyInfos = warrantyInfoService.getAllWarrantyInfos()
@@ -34,6 +35,7 @@ public class WarrantyInfoController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/warranty-info/{id}")
     public ResponseEntity<?> getWarrantyInfoById(@PathVariable Long id) {
         return warrantyInfoService.getWarrantyInfoById(id)
@@ -52,6 +54,7 @@ public class WarrantyInfoController {
                 });
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/warranty-info")
     public ResponseEntity<?> createWarrantyInfo(@RequestBody WarrantyInfoPostVm warrantyInfoPostVm) {
         warrantyInfoService.addWarrantyInfo(warrantyInfoPostVm.toWarrantyInfo());
@@ -63,6 +66,7 @@ public class WarrantyInfoController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/warranty-info/{id}")
     public ResponseEntity<?> updateWarrantyInfo(@PathVariable Long id, @RequestBody WarrantyInfoPostVm warrantyInfoPostVm) {
         WarrantyInfo warrantyInfo = warrantyInfoPostVm.toWarrantyInfo();
@@ -76,6 +80,7 @@ public class WarrantyInfoController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/warranty-info/{id}")
     public ResponseEntity<?> deleteWarrantyInfoById(@PathVariable Long id) {
         warrantyInfoService.deleteWarrantyInfoById(id);

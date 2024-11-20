@@ -6,6 +6,7 @@ import com.radical.be_radicalcare.ViewModels.CategoryGetVm;
 import com.radical.be_radicalcare.ViewModels.CategoryPostVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -14,11 +15,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/category")
     public ResponseEntity<?> getAllCategories() {
         List<CategoryGetVm> categories = categoryService.getAllCategories()
@@ -34,6 +35,7 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/category/{id}")
     public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
         return categoryService.getCategoryById(id)
@@ -52,6 +54,7 @@ public class CategoryController {
                 });
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/category")
     public ResponseEntity<?> createCategory(@RequestBody CategoryPostVm categoryPostVm) {
         categoryService.addCategory(categoryPostVm.toCategory());
@@ -63,6 +66,7 @@ public class CategoryController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/category/{id}")
     public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody CategoryPostVm categoryPostVm) {
         try {
@@ -85,6 +89,7 @@ public class CategoryController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/category/{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategoryById(id);

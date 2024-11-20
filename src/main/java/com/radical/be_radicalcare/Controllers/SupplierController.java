@@ -6,6 +6,7 @@ import com.radical.be_radicalcare.ViewModels.SupplierGetVm;
 import com.radical.be_radicalcare.ViewModels.SupplierPostVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class SupplierController {
     private final SupplierService supplierService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/supplier")
     public ResponseEntity<?> getAllSuppliers() {
         List<SupplierGetVm> suppliers = supplierService.getAllSuppliers()
@@ -34,6 +36,7 @@ public class SupplierController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/supplier/{id}")
     public ResponseEntity<?> getSupplierById(@PathVariable Long id) {
         return supplierService.getSupplierById(id)
@@ -52,6 +55,7 @@ public class SupplierController {
                 });
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/supplier")
     public ResponseEntity<?> createSupplier(@RequestBody SupplierPostVm supplierPostVm) {
         Supplier supplier = supplierPostVm.toSupplier();
@@ -64,6 +68,7 @@ public class SupplierController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/supplier/{id}")
     public ResponseEntity<?> updateSupplier(@PathVariable Long id, @RequestBody SupplierPostVm supplierPostVm) {
         Supplier supplier = supplierPostVm.toSupplier();
@@ -77,6 +82,7 @@ public class SupplierController {
         return ResponseEntity.status(200).body(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/supplier/{id}")
     public ResponseEntity<?> deleteSupplier(@PathVariable Long id) {
         supplierService.deleteSupplierById(id);

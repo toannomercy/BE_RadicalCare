@@ -14,13 +14,21 @@ import jakarta.persistence.criteria.Predicate;
 public class VehicleSpecification {
 
     public static Specification<Vehicle> hasSegmentIn(List<String> segments) {
-        return (root, query, criteriaBuilder) ->
-                segments.isEmpty() ? criteriaBuilder.conjunction() : root.get("segment").in(segments);
+        return (root, query, criteriaBuilder) -> {
+            if (segments == null || segments.isEmpty()) {
+                return criteriaBuilder.conjunction(); // Không áp dụng điều kiện nếu segments là null hoặc rỗng
+            }
+            return root.get("segment").in(segments);
+        };
     }
 
     public static Specification<Vehicle> hasColorIn(List<String> colors) {
-        return (root, query, criteriaBuilder) ->
-                colors.isEmpty() ? criteriaBuilder.conjunction() : root.get("color").in(colors);
+        return (root, query, criteriaBuilder) -> {
+            if (colors == null || colors.isEmpty()) {
+                return criteriaBuilder.conjunction(); // Không áp dụng điều kiện nếu colors là null hoặc rỗng
+            }
+            return root.get("color").in(colors);
+        };
     }
 
     public static Specification<Vehicle> isSold(Boolean sold) {
@@ -29,8 +37,12 @@ public class VehicleSpecification {
     }
 
     public static Specification<Vehicle> hasCategoryIdIn(List<Integer> categoryIds) {
-        return (root, query, criteriaBuilder) ->
-                categoryIds.isEmpty() ? criteriaBuilder.conjunction() : root.get("categoryId").get("id").in(categoryIds);
+        return (root, query, criteriaBuilder) -> {
+            if (categoryIds == null || categoryIds.isEmpty()) {
+                return criteriaBuilder.conjunction(); // Không áp dụng điều kiện nếu categoryIds là null hoặc rỗng
+            }
+            return root.get("categoryId").get("id").in(categoryIds);
+        };
     }
 
     public static Specification<Vehicle> hasCostBetween(Double minCost, Double maxCost) {
@@ -56,6 +68,10 @@ public class VehicleSpecification {
 
     // Tìm kiếm theo cateId dành cho mục đích tìm kiếm thay vì filter
     public static Specification<Vehicle> hasKeyword(String keyword, CategoryService categoryService) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return (root, query, criteriaBuilder) -> criteriaBuilder.conjunction(); // Không áp dụng điều kiện nếu keyword null
+        }
+
         String[] keywords = keyword.toLowerCase().split(" ");
         return (root, query, criteriaBuilder) -> {
             // Lấy ID danh mục tương ứng với từ khóa

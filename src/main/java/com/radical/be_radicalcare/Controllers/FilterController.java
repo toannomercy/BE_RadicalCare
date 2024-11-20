@@ -5,6 +5,7 @@ import com.radical.be_radicalcare.Services.FilterService;
 import com.radical.be_radicalcare.ViewModels.FilterGetVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class FilterController {
 
     private final FilterService filterService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping
     public ResponseEntity<?> filterVehicles(@RequestParam MultiValueMap<String, String> queryParams) {
         // Lấy danh sách segments, nếu không có thì trả về danh sách rỗng
@@ -63,6 +65,7 @@ public class FilterController {
     }
 
     // API để lấy các segment duy nhất
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/segments")
     public ResponseEntity<?> getSegments() {
         Set<String> segments = filterService.getUniqueSegments();
@@ -73,6 +76,7 @@ public class FilterController {
     }
 
     // API để lấy các màu sắc duy nhất
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/colors")
     public ResponseEntity<?> getColors() {
         Set<String> colors = filterService.getUniqueColors();

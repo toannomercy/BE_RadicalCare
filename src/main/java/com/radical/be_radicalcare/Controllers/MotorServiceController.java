@@ -7,6 +7,7 @@ import com.radical.be_radicalcare.ViewModels.MotorServiceGetVm;
 import com.radical.be_radicalcare.ViewModels.MotorServicePostVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +16,13 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin("*")
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class MotorServiceController {
 
     private final MotorServicesService motorServicesService;
 
-
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/motor-service")
     public ResponseEntity<?> getAllMotorServices(){
         List<MotorServiceGetVm> motorServices = motorServicesService.getAllMotorServices()
@@ -38,6 +38,7 @@ public class MotorServiceController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/motor-service/{id}")
     public ResponseEntity<?> getMotorServiceById (@PathVariable Long id){
         return motorServicesService.getMotorServiceById(id)
@@ -55,6 +56,8 @@ public class MotorServiceController {
                     return ResponseEntity.status(404).body(response);
                 });
     }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/motor-service")
     public ResponseEntity<?> createMotorServiceById(@RequestBody MotorServicePostVm motorServicePostVm){
         motorServicesService.addMotorService(motorServicePostVm.toMotorService());
@@ -66,6 +69,7 @@ public class MotorServiceController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/motor-service/{id}")
     public ResponseEntity<?> updateMotorServiceById (@PathVariable Long id, @RequestBody MotorServicePostVm motorServicePostVm){
         try{
@@ -88,6 +92,7 @@ public class MotorServiceController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/motor-service/{id}")
     public ResponseEntity<?> deletedMotorServiceById(@PathVariable Long id){
         motorServicesService.deletedMotorServiceById(id);
