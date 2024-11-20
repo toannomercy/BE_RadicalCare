@@ -5,10 +5,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -20,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -32,24 +32,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
         String token = request.getHeader("Authorization");
+        log.info("Authorization Header: {}", token); // Log token từ client
 
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7); // Bỏ tiền tố "Bearer "
 
+            log.info("Token after stripping Bearer: {}", token);
+
             if (jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromJWT(token);
-                List<String> authorities = jwtTokenProvider.getRolesFromToken(token);
+                log.info("Decoded username: {}", username);
 
-                // Chuyển danh sách authorities thành GrantedAuthority
+                List<String> authorities = jwtTokenProvider.getRolesFromToken(token);
+                log.info("Decoded authorities: {}", authorities);
+
                 List<SimpleGrantedAuthority> grantedAuthorities = authorities.stream()
                         .map(SimpleGrantedAuthority::new)
                         .toList();
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(username, null, grantedAuthorities);
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }

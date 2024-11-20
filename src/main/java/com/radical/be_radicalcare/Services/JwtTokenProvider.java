@@ -3,78 +3,85 @@ package com.radical.be_radicalcare.Services;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 public class JwtTokenProvider {
 
-    private final Key jwtSecret;
+    private final Key signingKey;  // Khóa mã hóa JWT
 
-    public JwtTokenProvider() {
-        this.jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS512); // Khóa bí mật để ký JWT
+    // Constructor: Khởi tạo jwtSecret và signingKey
+    public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
+        // Chuỗi secret key lấy từ application.properties
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Tạo JWT với quyền hạn (roles)
     public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
+        String username = authentication.getName(); // Lấy tên người dùng từ authentication
         List<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .toList(); // Lấy danh sách quyền từ Authentication
+                .toList(); // Lấy danh sách quyền hạn (roles)
 
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 604800000); // 7 ngày
+        Date expiryDate = new Date(now.getTime() + 604800000); // Token expires in 7 days
+
+        log.info("Generating JWT for username: {}", username);
 
         return Jwts.builder()
-                .setSubject(username)
-                .claim("authorities", authorities) // Gắn quyền vào payload của token
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(jwtSecret) // Ký token bằng secret key
+                .setSubject(username) // Gắn username vào token
+                .claim("authorities", authorities) // Gắn danh sách quyền hạn vào token
+                .setIssuedAt(now) // Thời gian phát hành
+                .setExpiration(expiryDate) // Thời gian hết hạn
+                .signWith(signingKey) // Ký token bằng khóa signingKey
                 .compact();
     }
 
-    // Xác thực JWT
+
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(jwtSecret).build().parseClaimsJws(authToken);
+            Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(authToken);
+            log.info("JWT token is valid.");
             return true;
         } catch (MalformedJwtException ex) {
-            log.error("Token JWT không hợp lệ.");
+            log.error("Invalid JWT token: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
-            log.error("Token JWT đã hết hạn.");
+            log.error("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
-            log.error("Token JWT không được hỗ trợ.");
+            log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            log.error("Chuỗi claims của token JWT trống.");
+            log.error("JWT token claims string is empty: {}", ex.getMessage());
+        } catch (Exception ex) {
+            log.error("Error while validating JWT: {}", ex.getMessage());
         }
         return false;
     }
 
-    // Lấy username từ JWT
+
     public String getUsernameFromJWT(String token) {
         Claims claims = Jwts.parserBuilder()
-                .setSigningKey(jwtSecret)
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject();
+        return claims.getSubject(); // Trả về username từ token
     }
 
-    // Lấy danh sách quyền hạn (roles) từ JWT
+
     public List<String> getRolesFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
-                .setSigningKey(jwtSecret)
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.get("authorities", List.class);
+        return claims.get("authorities", List.class); // Trả về danh sách roles
     }
 }
