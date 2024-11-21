@@ -15,8 +15,6 @@ public class JwtTokenProvider {
 
     private final Key jwtSecret;
 
-    private final int jwtExpirationInMs = 604800000;
-
     public JwtTokenProvider() {
         this.jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     }
@@ -24,6 +22,7 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Date now = new Date();
+        int jwtExpirationInMs = 604800000;
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()

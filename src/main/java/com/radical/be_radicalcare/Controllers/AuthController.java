@@ -3,13 +3,11 @@ package com.radical.be_radicalcare.Controllers;
 import com.radical.be_radicalcare.Dto.JwtResponse;
 import com.radical.be_radicalcare.Dto.LoginRequest;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
-import com.radical.be_radicalcare.Entities.User;
 import com.radical.be_radicalcare.Services.JwtTokenProvider;
 import com.radical.be_radicalcare.Services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,7 +44,7 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid username or password");
+                    .body("Invalid username or Password");
         } catch (Exception e) {
             log.error("Error during authentication: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -64,6 +62,18 @@ public class AuthController {
         userService.registerUser(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("User registered successfully");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email){
+        userService.forgotPassWord(email);
+        return ResponseEntity.ok("Password reset link sent to your email: " + email);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword){
+        userService.resetPassword(token, newPassword);
+        return ResponseEntity.ok("Password reset successfully");
     }
 }
 

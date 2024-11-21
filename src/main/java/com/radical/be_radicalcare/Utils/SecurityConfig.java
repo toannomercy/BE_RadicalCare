@@ -1,13 +1,12 @@
 package com.radical.be_radicalcare.Utils;
 
-import com.radical.be_radicalcare.Services.OAuthService;
+import com.radical.be_radicalcare.Services.OAuth2UserService;
 import com.radical.be_radicalcare.Services.UserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -34,7 +33,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final OAuthService oAuthService;
+    private final OAuth2UserService oAuth2UserService;
     private final UserService userService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -52,12 +51,14 @@ public class SecurityConfig {
                 .authorizationUri("https://accounts.google.com/o/oauth2/auth")
                 .tokenUri("https://oauth2.googleapis.com/token")
                 .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
-                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+                .userNameAttributeName("sub")
+                .redirectUri("http://localhost:8080/login/oauth2/code/google")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .build();
 
         return new InMemoryClientRegistrationRepository(googleClientRegistration);
     }
+
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -88,46 +89,37 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/v1/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").permitAll()
-                        .anyRequest().authenticated()
-                ).logout(logout -> logout
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers("/").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll();
+                    auth.anyRequest().authenticated();
+                })
+                .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login")
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .permitAll()
-                ).formLogin(formLogin -> formLogin
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/")
-                        .failureUrl("/login?error")
-                        .permitAll()
-                ).oauth2Login(
-                        oauth2Login -> oauth2Login
-                                .loginPage("/login")
-                                .failureUrl("/login?error")
-                                .userInfoEndpoint(userInfoEndpoint ->
-                                        userInfoEndpoint
-                                                .userService(oAuthService)
-                                )
-                                .permitAll()
-                ).rememberMe(rememberMe -> rememberMe
+                )
+                .formLogin(withDefaults())
+                .oauth2Login(withDefaults())
+                .rememberMe(rememberMe -> rememberMe
                         .key("radical")
                         .rememberMeCookieName("radical")
                         .tokenValiditySeconds(24 * 60 * 60)
                         .userDetailsService(userDetailsService())
-                ).exceptionHandling(exceptionHandling ->
+                )
+                .exceptionHandling(exceptionHandling ->
                         exceptionHandling.accessDeniedPage("/403")
-                ).sessionManagement(sessionManagement ->
+                )
+                .sessionManagement(sessionManagement ->
                         sessionManagement.maximumSessions(1).expiredUrl("/login")
-                ).httpBasic(httpBasic ->
+                )
+                .httpBasic(httpBasic ->
                         httpBasic.realmName("radical")
                 )
                 .build();
