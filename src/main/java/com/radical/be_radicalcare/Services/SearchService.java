@@ -6,7 +6,7 @@ import com.radical.be_radicalcare.Repositories.IMotorServicesRepository;
 import com.radical.be_radicalcare.Repositories.IVehicleRepository;
 import com.radical.be_radicalcare.Services.CategoryService;
 import com.radical.be_radicalcare.Specifications.VehicleSpecification;
-import com.radical.be_radicalcare.ViewModels.SearchGetVm;
+import com.radical.be_radicalcare.ViewModels.SearchVehicleGetVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,7 +24,7 @@ public class SearchService {
     private final CategoryService categoryService;
 
     // Tìm kiếm Vehicle theo keyword và các tiêu chí lọc
-    public Page<SearchGetVm> searchVehicles(
+    public Page<SearchVehicleGetVm> searchVehicles(
             Specification<Vehicle> spec,
             int page,
             int size,
@@ -36,11 +36,11 @@ public class SearchService {
         );
 
         // Ánh xạ từ Vehicle sang SearchGetVm
-        return vehicles.map(SearchGetVm::fromVehicleEntity);
+        return vehicles.map(SearchVehicleGetVm::fromVehicleEntity);
     }
 
     // Tìm kiếm Vehicle chỉ với keyword
-    public List<SearchGetVm> searchVehiclesByKeyword(String keyword) {
+    public List<SearchVehicleGetVm> searchVehiclesByKeyword(String keyword) {
         Specification<Vehicle> spec = Specification.where(
                 VehicleSpecification.hasKeyword(keyword, categoryService)
         );
@@ -48,21 +48,21 @@ public class SearchService {
         List<Vehicle> vehicles = vehicleRepository.findAll(spec);
 
         return vehicles.stream()
-                .map(SearchGetVm::fromVehicleEntity)
+                .map(SearchVehicleGetVm::fromVehicleEntity)
                 .toList();
     }
 
     // (Nếu cần) Tìm kiếm MotorService theo keyword hoặc các tiêu chí lọc khác
-    public Page<SearchGetVm> searchMotorServices(
-            Specification<MotorService> spec,
-            int page,
-            int size,
-            String sortBy
-    ) {
-        Page<MotorService> motorServices = motorServicesRepository.findAll(
-                spec, PageRequest.of(page, size, Sort.by(sortBy))
-        );
-
-        return motorServices.map(SearchGetVm::fromMotorServiceEntity);
-    }
+//    public Page<SearchVehicleGetVm> searchMotorServices(
+//            Specification<MotorService> spec,
+//            int page,
+//            int size,
+//            String sortBy
+//    ) {
+//        Page<MotorService> motorServices = motorServicesRepository.findAll(
+//                spec, PageRequest.of(page, size, Sort.by(sortBy))
+//        );
+//
+//        return motorServices.map(SearchVehicleGetVm::fromMotorServiceEntity);
+//    }
 }

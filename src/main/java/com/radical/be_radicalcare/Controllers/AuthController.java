@@ -32,6 +32,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
+            // Xác thực người dùng
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
@@ -39,9 +40,16 @@ public class AuthController {
                     )
             );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtTokenProvider.generateToken(authentication);
+            // Lấy userId từ cơ sở dữ liệu dựa trên username
+            String userId = userService.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"))
+                    .getId(); // Lấy giá trị `id` từ bảng User
 
+            // Tạo token JWT với Authentication và userId
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = jwtTokenProvider.generateToken(authentication, userId);
+
+            // Trả về token trong response
             return ResponseEntity.ok(new JwtResponse(jwt));
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
@@ -53,6 +61,7 @@ public class AuthController {
                     .body("An error occurred: " + e.getMessage());
         }
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {

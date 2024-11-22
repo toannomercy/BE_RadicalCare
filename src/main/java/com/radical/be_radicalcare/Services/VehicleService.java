@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -31,13 +32,18 @@ public class VehicleService {
     private final CostTableService costTableService;
     private final CategoryService categoryService;
 
+    public Page<Vehicle> searchVehicles(Specification<Vehicle> spec, int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        return vehicleRepository.findAllWithRelations(spec.toString(), pageable); // Sử dụng JOIN FETCH
+    }
+
     public Page<Vehicle> getAllVehicles(int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
         return vehicleRepository.findAll(pageable);
     }
 
     public Optional<Vehicle> getVehicleById(String chassisNumber) {
-        return vehicleRepository.findById(chassisNumber);
+        return vehicleRepository.findByIdWithRelations(chassisNumber); // Sử dụng truy vấn tùy chỉnh
     }
 
     public void addVehicle(Vehicle vehicle, List<MultipartFile> images) throws IOException {

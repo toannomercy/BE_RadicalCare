@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -79,6 +80,10 @@ public class UserService implements UserDetailsService {
 
         userRepository.save(user);
         log.info("OAuth user registered with username: {}", username);
+    }
+
+    public Optional<User> findByUsername(String username) {
+        return Optional.ofNullable(userRepository.findByUsername(username));
     }
 }
 

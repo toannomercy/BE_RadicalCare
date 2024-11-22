@@ -26,7 +26,7 @@ public record VehicleGetVm(
         List<String> warrantyHistory,
         List<String> imageUrls
 ) {
-    public static VehicleGetVm fromEntity (Vehicle vehicle) {
+    public static VehicleGetVm fromEntity(Vehicle vehicle) {
         return VehicleGetVm.builder()
                 .chassisNumber(vehicle.getChassisNumber())
                 .vehicleName(vehicle.getVehicleName())
@@ -40,7 +40,9 @@ public record VehicleGetVm(
                 .costId(vehicle.getCostId() != null ? vehicle.getCostId().getCostId() : null)
                 .categoryId(vehicle.getCategoryId() != null ? vehicle.getCategoryId().getId() : null)
                 .supplierId(vehicle.getSupplierId() != null ? vehicle.getSupplierId().getSupplierId() : null)
-                .warrantyHistory(vehicle.getWarrantyHistory().stream().map(WarrantyHistory::toString).collect(Collectors.toList()))
+                .warrantyHistory(vehicle.getWarrantyHistory() != null
+                        ? vehicle.getWarrantyHistory().stream().map(WarrantyHistory::toString).collect(Collectors.toList())
+                        : null)
                 .imageUrls(vehicle.getImageUrls())
                 .build();
     }

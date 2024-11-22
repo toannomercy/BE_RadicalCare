@@ -19,32 +19,30 @@ public class JwtTokenProvider {
 
     private final Key signingKey;  // Khóa mã hóa JWT
 
-    // Constructor: Khởi tạo jwtSecret và signingKey
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
-        // Chuỗi secret key lấy từ application.properties
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Authentication authentication) {
-        String username = authentication.getName(); // Lấy tên người dùng từ authentication
+    public String generateToken(Authentication authentication, String userId) {
+        String username = authentication.getName();
         List<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .toList(); // Lấy danh sách quyền hạn (roles)
+                .toList();
 
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 604800000); // Token expires in 7 days
+        Date expiryDate = new Date(now.getTime() + 604800000);
 
-        log.info("Generating JWT for username: {}", username);
+        log.info("Generating JWT for username: {} and userId: {}", username, userId);
 
         return Jwts.builder()
-                .setSubject(username) // Gắn username vào token
-                .claim("authorities", authorities) // Gắn danh sách quyền hạn vào token
-                .setIssuedAt(now) // Thời gian phát hành
-                .setExpiration(expiryDate) // Thời gian hết hạn
-                .signWith(signingKey) // Ký token bằng khóa signingKey
+                .setSubject(username)
+                .claim("userId", userId)
+                .claim("authorities", authorities)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(signingKey)
                 .compact();
     }
-
 
     public boolean validateToken(String authToken) {
         try {
@@ -65,16 +63,23 @@ public class JwtTokenProvider {
         return false;
     }
 
-
     public String getUsernameFromJWT(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject(); // Trả về username từ token
+        return claims.getSubject();
     }
 
+    public String getUserIdFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("userId", String.class);
+    }
 
     public List<String> getRolesFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
@@ -82,6 +87,7 @@ public class JwtTokenProvider {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.get("authorities", List.class); // Trả về danh sách roles
+        return claims.get("authorities", List.class);
     }
 }
+
