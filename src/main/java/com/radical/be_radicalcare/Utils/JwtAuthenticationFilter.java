@@ -5,7 +5,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -32,31 +30,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
         String token = request.getHeader("Authorization");
-        log.info("Authorization Header: {}", token); // Log token từ client
+
+        // Bỏ qua filter cho các endpoint không yêu cầu xác thực
+        if (requestURI.equals("/api/v1/auth/register") ||
+                requestURI.equals("/api/v1/auth/login") ||
+                requestURI.equals("/api/v1/auth/forgot-password") ||
+                requestURI.equals("/api/v1/login/oauth2/code/google")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7); // Bỏ tiền tố "Bearer "
 
-            log.info("Token after stripping Bearer: {}", token);
-
             if (jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromJWT(token);
-                log.info("Decoded username: {}", username);
 
-                List<String> authorities = jwtTokenProvider.getRolesFromToken(token);
-                log.info("Decoded authorities: {}", authorities);
+                String userId = jwtTokenProvider.getUserIdFromJWT(token);
 
-                List<SimpleGrantedAuthority> grantedAuthorities = authorities.stream()
+                // Lấy authorities từ token
+                List<String> roles = jwtTokenProvider.getRolesFromToken(token);
+
+                List<SimpleGrantedAuthority> authorities = roles.stream()
                         .map(SimpleGrantedAuthority::new)
-                        .toList();
+                        .collect(Collectors.toList());
 
+                // Tạo đối tượng xác thực
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, grantedAuthorities);
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // Gán thông tin xác thực vào SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
 
+        // Tiếp tục chuỗi filter
         filterChain.doFilter(request, response);
     }
 }

@@ -57,7 +57,8 @@ public class SecurityConfig {
                 .authorizationUri("https://accounts.google.com/o/oauth2/auth")
                 .tokenUri("https://oauth2.googleapis.com/token")
                 .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
-                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+                .userNameAttributeName("sub")
+                .redirectUri("http://192.168.1.33:8080/login/oauth2/code/google")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .build();
 
@@ -94,6 +95,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reset-password/shown").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/category").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/products").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasAuthority("ADMIN")
@@ -110,23 +115,8 @@ public class SecurityConfig {
                         .clearAuthentication(true)
                         .permitAll()
                 )
-                .formLogin(formLogin -> formLogin
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/")
-                        .failureUrl("/login?error")
-                        .permitAll()
-                )
-                .oauth2Login(
-                        oauth2Login -> oauth2Login
-                                .loginPage("/login")
-                                .failureUrl("/login?error")
-                                .userInfoEndpoint(userInfoEndpoint ->
-                                        userInfoEndpoint
-                                                .userService(oAuthService)
-                                )
-                                .permitAll()
-                )
+                .formLogin(withDefaults())
+                .oauth2Login(withDefaults())
                 .rememberMe(rememberMe -> rememberMe
                         .key("radical")
                         .rememberMeCookieName("radical")
