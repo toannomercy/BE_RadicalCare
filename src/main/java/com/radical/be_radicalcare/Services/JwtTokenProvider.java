@@ -4,10 +4,12 @@ import io.jsonwebtoken.*;
 
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
@@ -17,7 +19,11 @@ import java.util.List;
 public class JwtTokenProvider {
 
 
-    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    private final Key signingKey;
+
+    public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(Authentication authentication, String userId) {
         String username = authentication.getName();
@@ -26,8 +32,9 @@ public class JwtTokenProvider {
                 .toList();
 
         Date now = new Date();
-        int jwtExpirationInMs = 604800000;
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + 604800000);
+
+        log.info("Generating JWT for username: {} and userId: {}", username, userId);
 
         return Jwts.builder()
                 .setSubject(username)
