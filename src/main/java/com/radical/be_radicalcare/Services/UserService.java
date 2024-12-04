@@ -32,8 +32,6 @@ public class UserService implements UserDetailsService {
     private final IRoleRepository roleRepository;
     private final EmailService emailService;
 
-    private final EmailService emailService;
-
 
 
     public void registerUser(RegisterRequest registerRequest) {
@@ -104,21 +102,24 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Error while sending password reset email", e);
         }
     }
-  
+
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByTokenResetPassword(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid token!"));
-
-        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
-
-        if (user.getTokenResetPasswordExpired().before(now)) {
-            throw new IllegalArgumentException("Token expired!");
-        }
 
         user.setPassword(new BCryptPasswordEncoder().encode(newPassword));
         user.setTokenResetPassword(null);
         user.setTokenResetPasswordExpired(null);
         userRepository.save(user);
+    }
+
+    public boolean isTokenValid(String token) {
+        User user = userRepository.findByTokenResetPassword(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid token!"));
+
+        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
+
+        return user.getTokenResetPasswordExpired().after(now);
     }
 }
 

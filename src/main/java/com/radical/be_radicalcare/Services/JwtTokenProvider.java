@@ -1,14 +1,13 @@
 package com.radical.be_radicalcare.Services;
 
 import io.jsonwebtoken.*;
+
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
@@ -17,11 +16,8 @@ import java.util.List;
 @Slf4j
 public class JwtTokenProvider {
 
-    private final Key signingKey;  // Khóa mã hóa JWT
 
-    public JwtTokenProvider() {
-        this.jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-    }
+    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
     public String generateToken(Authentication authentication, String userId) {
         String username = authentication.getName();
