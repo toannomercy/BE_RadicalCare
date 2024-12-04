@@ -8,7 +8,13 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record ProductGetVm(Long id, String name, String description, String brand, Long costId, List<String> imageUrls) {
+public record ProductGetVm (
+        Long id,
+           String name,
+           String description,
+           String brand,
+           Long costId,
+           List<String> imageUrls) {
     public static ProductGetVm from(Product product) {
         return ProductGetVm.builder()
                 .id(product.getId())
