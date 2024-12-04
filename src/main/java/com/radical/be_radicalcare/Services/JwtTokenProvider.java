@@ -19,8 +19,8 @@ public class JwtTokenProvider {
 
     private final Key signingKey;  // Khóa mã hóa JWT
 
-    public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    public JwtTokenProvider() {
+        this.jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     }
 
     public String generateToken(Authentication authentication, String userId) {
@@ -30,9 +30,8 @@ public class JwtTokenProvider {
                 .toList();
 
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 604800000);
-
-        log.info("Generating JWT for username: {} and userId: {}", username, userId);
+        int jwtExpirationInMs = 604800000;
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
                 .setSubject(username)

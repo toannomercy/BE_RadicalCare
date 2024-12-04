@@ -80,7 +80,6 @@ public class AuthController {
         return ResponseEntity.ok("Password reset link sent to your email: " + email);
     }
 
-    // Xử lý đặt lại mật khẩu
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
         boolean isTokenValid = userService.isTokenValid(token);
@@ -88,7 +87,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token không hợp lệ hoặc đã hết hạn.");
         }
 
-        userService.resetPassword(token, newPassword);  // Reset mật khẩu dựa trên token
+        userService.resetPassword(token, newPassword);
         return ResponseEntity.ok("Password reset successfully");
     }
 }

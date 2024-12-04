@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         String token = request.getHeader("Authorization");
 
-        // Bỏ qua filter cho các endpoint không yêu cầu xác thực
+       
         if (requestURI.equals("/api/v1/auth/register") ||
                 requestURI.equals("/api/v1/auth/login") ||
                 requestURI.equals("/api/v1/auth/forgot-password") ||
@@ -44,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7); // Bỏ tiền tố "Bearer "
+            token = token.substring(7);
 
             if (jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromJWT(token);
@@ -62,13 +62,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(username, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Gán thông tin xác thực vào SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
-
-        // Tiếp tục chuỗi filter
         filterChain.doFilter(request, response);
     }
 }

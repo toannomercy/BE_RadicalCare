@@ -1,13 +1,12 @@
 package com.radical.be_radicalcare.Utils;
 
-import com.radical.be_radicalcare.Services.OAuthService;
+import com.radical.be_radicalcare.Services.OAuth2UserService;
 import com.radical.be_radicalcare.Services.UserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -39,7 +38,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final OAuthService oAuthService;
+    private final OAuth2UserService oAuth2UserService;
     private final UserService userService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -64,6 +63,7 @@ public class SecurityConfig {
 
         return new InMemoryClientRegistrationRepository(googleClientRegistration);
     }
+
 
     @Bean
     public UserDetailsService userDetailsService() {
