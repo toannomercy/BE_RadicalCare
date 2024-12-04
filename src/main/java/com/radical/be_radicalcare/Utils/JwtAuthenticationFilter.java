@@ -7,12 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -28,13 +31,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        String requestURI = request.getRequestURI();
         String token = request.getHeader("Authorization");
 
-        if (request.getRequestURI().equals("/api/v1/auth/register") ||
-                request.getRequestURI().equals("/api/v1/auth/login") ||
-                request.getRequestURI().equals("/api/v1/auth/forgot-password") ||
-                request.getRequestURI().equals("/api/v1/login/oauth2/code/google"))
-        {
+       
+        if (requestURI.equals("/api/v1/auth/register") ||
+                requestURI.equals("/api/v1/auth/login") ||
+                requestURI.equals("/api/v1/auth/forgot-password") ||
+                requestURI.equals("/api/v1/login/oauth2/code/google")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -44,15 +48,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromJWT(token);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, null);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+                String userId = jwtTokenProvider.getUserIdFromJWT(token);
+
+                // Lấy authorities từ token
+                List<String> roles = jwtTokenProvider.getRolesFromToken(token);
+
+                List<SimpleGrantedAuthority> authorities = roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
+
+                // Tạo đối tượng xác thực
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
-
         filterChain.doFilter(request, response);
     }
 }
-

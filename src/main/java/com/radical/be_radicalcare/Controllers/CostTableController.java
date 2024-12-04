@@ -10,6 +10,7 @@ import com.radical.be_radicalcare.ViewModels.WarrantyInfoGetVm;
 import com.radical.be_radicalcare.ViewModels.WarrantyInfoPostVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -18,11 +19,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 public class CostTableController {
     private final CostTableService costTableService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/cost-table")
     public ResponseEntity<?> getAllCostTable(){
         List<CostTableGetVm> costTables = costTableService.getAllCostTable()
@@ -38,6 +39,7 @@ public class CostTableController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/cost-table/{id}")
     public ResponseEntity<?> getCostTableById(@PathVariable Long id){
         return costTableService.getCostTableById(id)
@@ -56,6 +58,7 @@ public class CostTableController {
                 });
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/cost-table")
     public ResponseEntity<?> createCostTable (@RequestBody CostTablePostVm costTablePostVm){
         costTableService.addCostTable(costTablePostVm.toCostTable());
@@ -67,6 +70,7 @@ public class CostTableController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/cost-table/{id}")
     public ResponseEntity<?> updateCostTable (@PathVariable Long id, @RequestBody CostTablePostVm costTablePostVm) {
         CostTable costTable = costTablePostVm.toCostTable();
@@ -80,6 +84,7 @@ public class CostTableController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/cost-table/{id}")
     public ResponseEntity<?> deleteCostTableById(@PathVariable Long id) {
         costTableService.deleteCostTable(id);

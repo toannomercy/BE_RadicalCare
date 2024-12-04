@@ -8,6 +8,7 @@ import com.radical.be_radicalcare.ViewModels.ProductPostVm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,12 +18,12 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin("*")
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class ProductController {
     private final ProductService productService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/product")
     public ResponseEntity<?> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -45,7 +46,7 @@ public class ProductController {
 
         return ResponseEntity.ok(response);
     }
-
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/product/{id}")
     public ResponseEntity<?> getProductById(@PathVariable Long id) {
         return productService.getProductById(id)
@@ -64,7 +65,7 @@ public class ProductController {
                 });
     }
 
-
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/product", consumes = "multipart/form-data")
     public ResponseEntity<?> createProduct(@RequestPart("productPostVm") ProductPostVm productPostVm,
                                            @RequestPart("images") List<MultipartFile> images) {
@@ -85,6 +86,7 @@ public class ProductController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping(value = "/product/{id}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateProduct(@PathVariable Long id,
                                            @RequestPart("productPostVm") ProductPostVm productPostVm,
@@ -104,6 +106,7 @@ public class ProductController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/product/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id){
         productService.deleteProduct(id);

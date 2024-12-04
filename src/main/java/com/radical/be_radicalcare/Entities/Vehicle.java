@@ -1,6 +1,7 @@
 package com.radical.be_radicalcare.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -46,9 +47,11 @@ public class Vehicle {
     private Boolean sold;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cost_id", referencedColumnName = "cost_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @ToString.Exclude
     private CostTable costId;
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @JoinColumn(name = "category_id", referencedColumnName = "category_id")
     @ToString.Exclude
     private Category categoryId;

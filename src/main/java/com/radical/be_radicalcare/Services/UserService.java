@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ public class UserService implements UserDetailsService {
 
     private final IUserRepository userRepository;
     private final IRoleRepository roleRepository;
+    private final EmailService emailService;
 
     private final EmailService emailService;
 
@@ -70,6 +73,10 @@ public class UserService implements UserDetailsService {
                 .build();
     }
 
+    public Optional<User> findByUsername(String username) {
+        return Optional.ofNullable(userRepository.findByUsername(username));
+    }
+
     public void forgotPassWord(String email) {
         var user = userRepository.findByEmail(email);
         if (user == null) {
@@ -79,16 +86,17 @@ public class UserService implements UserDetailsService {
         log.info("User found with email: {}", email);
 
         String token = UUID.randomUUID().toString();
-
         user.setTokenResetPassword(token);
 
         java.util.Date now = new java.util.Date();
         java.sql.Date expiryDate = new java.sql.Date(now.getTime() + 30 * 60 * 1000);
         user.setTokenResetPasswordExpired(expiryDate);
 
+
         userRepository.save(user);
 
         try {
+            // Gửi token qua email
             emailService.sendMail(email, "Reset Password", token);
             log.info("Password reset email sent to {}", email);
         } catch (MessagingException e) {
@@ -96,8 +104,7 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Error while sending password reset email", e);
         }
     }
-
-
+  
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByTokenResetPassword(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid token!"));
@@ -113,6 +120,5 @@ public class UserService implements UserDetailsService {
         user.setTokenResetPasswordExpired(null);
         userRepository.save(user);
     }
-
 }
 
