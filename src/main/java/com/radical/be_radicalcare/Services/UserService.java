@@ -4,8 +4,10 @@ import com.radical.be_radicalcare.Constants.Provider;
 import com.radical.be_radicalcare.Constants.RoleType;
 import com.radical.be_radicalcare.Controllers.AuthController;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
+import com.radical.be_radicalcare.Entities.Customer;
 import com.radical.be_radicalcare.Entities.Role;
 import com.radical.be_radicalcare.Entities.User;
+import com.radical.be_radicalcare.Repositories.ICustomerRepository;
 import com.radical.be_radicalcare.Repositories.IRoleRepository;
 import com.radical.be_radicalcare.Repositories.IUserRepository;
 import jakarta.mail.MessagingException;
@@ -33,6 +35,8 @@ import java.util.UUID;
 public class UserService implements UserDetailsService {
 
     private final IUserRepository userRepository;
+    private final ICustomerRepository customerRepository;
+
     private final IRoleRepository roleRepository;
     private final EmailService emailService;
 
@@ -45,8 +49,18 @@ public class UserService implements UserDetailsService {
         user.setRoles(Set.of(roleRepository.findRoleById(RoleType.USER.value)));
 
         userRepository.save(user);
-        log.info("User registered with username: {}", registerRequest.getUsername());
+
+        var customer = new Customer();
+        customer.setFullName(registerRequest.getFullName());
+        customer.setPhoneNumber(registerRequest.getPhoneNumber());
+        customer.setAddress(registerRequest.getAddress());
+        customer.setDoB(registerRequest.getDoB());
+        customer.setUserId(user);
+
+        customerRepository.save(customer);
+        log.info("User and Customer registered with username: {}", registerRequest.getUsername());
     }
+
 
     public boolean existsByUsername(String username) {
         return userRepository.findByUsername(username) != null;

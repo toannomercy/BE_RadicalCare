@@ -25,6 +25,8 @@ public class Customer {
     private LocalDate doB;
     @Column(name = "address")
     private String address;
+    @Column(name = "phone_number")
+    private String phoneNumber;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ToString.Exclude

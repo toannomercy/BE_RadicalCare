@@ -17,6 +17,27 @@ import java.util.List;
 @Slf4j
 public class JwtTokenProvider {
 
+//    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+//
+//    public String generateToken(Authentication authentication, String userId) {
+//        String username = authentication.getName();
+//        List<String> authorities = authentication.getAuthorities().stream()
+//                .map(GrantedAuthority::getAuthority)
+//                .toList();
+//
+//        Date now = new Date();
+//        int jwtExpirationInMs = 604800000;
+//        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+//
+//        return Jwts.builder()
+//                .setSubject(username)
+//                .claim("userId", userId)
+//                .claim("authorities", authorities)
+//                .setIssuedAt(now)
+//                .setExpiration(expiryDate)
+//                .signWith(signingKey)
+//                .compact();
+//    }
     private final Key signingKey;  // Khóa mã hóa JWT
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {

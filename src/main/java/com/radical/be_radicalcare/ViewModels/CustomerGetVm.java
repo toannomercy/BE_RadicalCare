@@ -1,7 +1,9 @@
 package com.radical.be_radicalcare.ViewModels;
 
+import com.radical.be_radicalcare.Entities.Category;
 import com.radical.be_radicalcare.Entities.Customer;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDate;
 
@@ -11,15 +13,15 @@ public record CustomerGetVm(
         String fullName,
         LocalDate doB,
         String address,
-        UserGetVm user) {
-
+        String phoneNumber
+) {
     public static CustomerGetVm fromEntity(Customer customer) {
         return CustomerGetVm.builder()
                 .id(customer.getId())
                 .fullName(customer.getFullName())
                 .doB(customer.getDoB())
                 .address(customer.getAddress())
-                .user(UserGetVm.fromEntity(customer.getUserId()))
+                .phoneNumber(customer.getPhoneNumber())
                 .build();
     }
 }

@@ -9,15 +9,17 @@ import java.util.List;
 
 @Builder
 public record AppointmentPostVm(
-    LocalDate dateCreated,
-    String status,
-    String customerId,
-    List<Long> serviceIds
+        LocalDate dateCreated,
+        String status,
+        String customerId,
+        List<Long> serviceIds,
+        Double totalAmount
 ) {
     public Appointment toEntity() {
         Appointment appointment = new Appointment();
         appointment.setDateCreated(this.dateCreated);
         appointment.setStatus(this.status);
+        appointment.setTotalAmount(this.totalAmount);
 
         if(this.customerId != null) {
             Customer customer = new Customer();

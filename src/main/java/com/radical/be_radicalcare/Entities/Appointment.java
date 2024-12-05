@@ -23,11 +23,13 @@ public class Appointment {
     @Column(name = "date_created")
     private LocalDate dateCreated;
     @Column(name = "status")
-    private String status;
+    private String status="Pending";
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     @ToString.Exclude
     private Customer customer;
+    @Column(name = "total_amount", nullable = false)
+    private Double totalAmount = 0.0;
     @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
     @ToString.Exclude
     @JsonIgnore

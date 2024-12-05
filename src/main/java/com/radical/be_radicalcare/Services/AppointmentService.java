@@ -8,11 +8,10 @@ import com.radical.be_radicalcare.Repositories.IAppointmentDetailRepository;
 import com.radical.be_radicalcare.Repositories.IAppointmentRepository;
 import com.radical.be_radicalcare.Repositories.ICustomerRepository;
 import com.radical.be_radicalcare.Repositories.IMotorServicesRepository;
+import com.radical.be_radicalcare.ViewModels.AppointmentGetVm;
 import com.radical.be_radicalcare.ViewModels.AppointmentPostVm;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -22,75 +21,114 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(isolation = Isolation.SERIALIZABLE, rollbackFor = {Exception.class, Throwable.class})
+@Transactional
 public class AppointmentService {
+
     private final IAppointmentRepository appointmentRepository;
     private final ICustomerRepository customerRepository;
     private final IMotorServicesRepository motorServicesRepository;
     private final IAppointmentDetailRepository appointmentDetailRepository;
 
-    public void getAllAppointments() {
-        appointmentRepository.findAll();
+    public List<Appointment> getAllAppointments() {
+        return appointmentRepository.findAll();
     }
 
-    public Optional<Appointment> getAppointmentById(Long appointmentId) {
-        return appointmentRepository.findById(appointmentId);
+    public Optional<Appointment> getAppointmentById(Long id) {
+        return appointmentRepository.findById(id);
     }
 
     public void addAppointment(AppointmentPostVm appointmentPostVm) {
-        Appointment appointment = appointmentPostVm.toEntity();
-
         Customer customer = customerRepository.findById(appointmentPostVm.customerId())
-                .orElseThrow(()-> new ResourceNotFoundException("Customer not found"));
-        appointment.setCustomer(customer);
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+
+        Appointment appointment = Appointment.builder()
+                .dateCreated(appointmentPostVm.dateCreated())
+                .status("Pending")
+                .customer(customer)
+                .build();
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        saveServices(appointmentPostVm, savedAppointment);
+        Double totalAmount = saveAppointmentDetails(appointmentPostVm.serviceIds(), savedAppointment);
+
+        savedAppointment.setTotalAmount(totalAmount);
+        appointmentRepository.save(savedAppointment);
     }
 
     public void updateAppointment(Long appointmentId, AppointmentPostVm appointmentPostVm) {
         Appointment existingAppointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
-
-        existingAppointment.setDateCreated(appointmentPostVm.dateCreated());
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
 
         Customer customer = customerRepository.findById(appointmentPostVm.customerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+
+        existingAppointment.setDateCreated(appointmentPostVm.dateCreated());
         existingAppointment.setCustomer(customer);
 
         appointmentDetailRepository.deleteAll(existingAppointment.getAppointmentDetails());
+        saveAppointmentDetails(appointmentPostVm.serviceIds(), existingAppointment);
 
-        saveServices(appointmentPostVm, existingAppointment);
-    }
-
-    private void saveServices(AppointmentPostVm appointmentPostVm, Appointment existingAppointment) {
-        List<AppointmentDetail> appointmentDetails = appointmentPostVm.serviceIds().stream().map(serviceId -> {
-            MotorService service = motorServicesRepository.findById(serviceId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
-            AppointmentDetail appointmentDetail = new AppointmentDetail();
-            appointmentDetail.setMotorService(service);
-            appointmentDetail.setAppointment(existingAppointment);
-            appointmentDetail.setServiceDate(LocalDate.now());
-            appointmentDetail.setServiceCost(service.getCostId().getBaseCost());
-            appointmentDetail.setDescription(service.getServiceName());
-            return appointmentDetail;
-        }).collect(Collectors.toList());
-
-        existingAppointment.setAppointmentDetails(appointmentDetails);
         appointmentRepository.save(existingAppointment);
-
-        appointmentDetailRepository.saveAll(appointmentDetails);
     }
-
 
     public void deleteAppointment(Long appointmentId) {
-        Appointment existingAppointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
 
-        appointmentDetailRepository.deleteAll(existingAppointment.getAppointmentDetails());
-
-        appointmentRepository.delete(existingAppointment);
+        appointmentDetailRepository.deleteAll(appointment.getAppointmentDetails());
+        appointmentRepository.delete(appointment);
     }
 
+    public Appointment createQuickAppointment(String customerId, List<Long> serviceIds) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+
+        Appointment appointment = Appointment.builder()
+                .dateCreated(LocalDate.now())
+                .status("Pending")
+                .customer(customer)
+                .build();
+
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        saveAppointmentDetails(serviceIds, savedAppointment);
+        return savedAppointment;
+    }
+
+    public List<AppointmentGetVm> searchAppointments(Long customerId, LocalDate dateCreated, List<Long> serviceIds) {
+        return appointmentRepository.findAll().stream()
+                .filter(appointment -> {
+                    boolean matchesCustomer = customerId == null || appointment.getCustomer().getId().equals(String.valueOf(customerId));
+                    boolean matchesDate = dateCreated == null || appointment.getDateCreated().equals(dateCreated);
+                    boolean matchesService = serviceIds == null || appointment.getAppointmentDetails().stream()
+                            .anyMatch(detail -> serviceIds.contains(detail.getMotorService().getServiceId()));
+
+                    return matchesCustomer && matchesDate && matchesService;
+                })
+                .map(AppointmentGetVm::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    private Double saveAppointmentDetails(List<Long> serviceIds, Appointment appointment) {
+        List<AppointmentDetail> details = serviceIds.stream()
+                .map(serviceId -> {
+                    MotorService service = motorServicesRepository.findById(serviceId)
+                            .orElseThrow(() -> new IllegalArgumentException("Service not found"));
+
+                    return AppointmentDetail.builder()
+                            .appointment(appointment)
+                            .motorService(service)
+                            .serviceDate(LocalDate.now())
+                            .serviceCost(service.getCostId().getBaseCost())
+                            .description(service.getServiceName())
+                            .build();
+                })
+                .toList();
+
+        appointmentDetailRepository.saveAll(details);
+
+        return details.stream()
+                .mapToDouble(AppointmentDetail::getServiceCost)
+                .sum();
+    }
 }

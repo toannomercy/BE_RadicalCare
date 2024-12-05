@@ -2,6 +2,7 @@ package com.radical.be_radicalcare.ViewModels;
 
 import com.radical.be_radicalcare.Entities.AppointmentDetail;
 import lombok.Builder;
+
 import java.time.LocalDate;
 
 @Builder
@@ -11,8 +12,8 @@ public record AppointmentDetailGetVm(
         LocalDate serviceDate,
         Double serviceCost,
         MotorServiceGetVm motorService,
-        Long appointmentId) {
-
+        Long appointmentId
+) {
     public static AppointmentDetailGetVm fromEntity(AppointmentDetail appointmentDetail) {
         return AppointmentDetailGetVm.builder()
                 .id(appointmentDetail.getId())
@@ -24,4 +25,3 @@ public record AppointmentDetailGetVm(
                 .build();
     }
 }
-
