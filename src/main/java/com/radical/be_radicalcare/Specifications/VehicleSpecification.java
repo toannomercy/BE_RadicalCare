@@ -39,9 +39,9 @@ public class VehicleSpecification {
     public static Specification<Vehicle> hasCategoryIdIn(List<Integer> categoryIds) {
         return (root, query, criteriaBuilder) -> {
             if (categoryIds == null || categoryIds.isEmpty()) {
-                return criteriaBuilder.conjunction(); // Không áp dụng điều kiện nếu categoryIds là null hoặc rỗng
+                return criteriaBuilder.conjunction();
             }
-            return root.get("categoryId").get("id").in(categoryIds);
+            return root.get("categoryId").get("categoryId").in(categoryIds);
         };
     }
 
@@ -49,16 +49,16 @@ public class VehicleSpecification {
         return (root, query, criteriaBuilder) -> {
             if (minCost != null && maxCost != null) {
                 return criteriaBuilder.between(
-                        root.join("costTable").get("baseCost"), // Join costTable để truy cập baseCost
+                        root.get("costId").get("baseCost"), // Sử dụng costId để truy cập
                         minCost, maxCost
                 );
             } else if (minCost != null) {
                 return criteriaBuilder.greaterThanOrEqualTo(
-                        root.join("costTable").get("baseCost"), minCost
+                        root.get("costId").get("baseCost"), minCost
                 );
             } else if (maxCost != null) {
                 return criteriaBuilder.lessThanOrEqualTo(
-                        root.join("costTable").get("baseCost"), maxCost
+                        root.get("costId").get("baseCost"), maxCost
                 );
             } else {
                 return criteriaBuilder.conjunction();

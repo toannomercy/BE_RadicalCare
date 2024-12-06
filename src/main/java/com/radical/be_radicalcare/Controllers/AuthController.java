@@ -3,13 +3,16 @@ package com.radical.be_radicalcare.Controllers;
 import com.radical.be_radicalcare.Dto.JwtResponse;
 import com.radical.be_radicalcare.Dto.LoginRequest;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
+import com.radical.be_radicalcare.Entities.User;
 import com.radical.be_radicalcare.Services.JwtTokenProvider;
 import com.radical.be_radicalcare.Services.UserService;
+import com.radical.be_radicalcare.ViewModels.UserGetVm;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,7 +34,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
-            // Xác thực người dùng
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
@@ -39,16 +41,13 @@ public class AuthController {
                     )
             );
 
-            // Lấy userId từ cơ sở dữ liệu dựa trên username
             String userId = userService.findByUsername(loginRequest.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"))
-                    .getId(); // Lấy giá trị `id` từ bảng User
+                    .getId();
 
-            // Tạo token JWT với Authentication và userId
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtTokenProvider.generateToken(authentication, userId);
 
-            // Trả về token trong response
             return ResponseEntity.ok(new JwtResponse(jwt));
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
@@ -61,6 +60,24 @@ public class AuthController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+    @GetMapping("/fetch-user")
+    public ResponseEntity<UserGetVm> fetchUser(Authentication authentication) {
+        try {
+            String username = authentication.getName();
+
+            User user = userService.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            UserGetVm userGetVm = UserGetVm.fromEntity(user);
+
+            return ResponseEntity.ok(userGetVm);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
@@ -80,7 +97,6 @@ public class AuthController {
         return ResponseEntity.ok("Password reset link sent to your email: " + email);
     }
 
-    // Xử lý đặt lại mật khẩu
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
         boolean isTokenValid = userService.isTokenValid(token);

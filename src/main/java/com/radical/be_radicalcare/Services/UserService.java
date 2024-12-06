@@ -41,15 +41,20 @@ public class UserService implements UserDetailsService {
     private final EmailService emailService;
 
     public void registerUser(RegisterRequest registerRequest) {
+        // Tạo đối tượng User và ánh xạ dữ liệu từ RegisterRequest
         var user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setPassword(new BCryptPasswordEncoder().encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
         user.setProvider(Provider.LOCAL);
+        user.setFullName(registerRequest.getFullName()); // Ánh xạ fullname
+        user.setPhone(registerRequest.getPhoneNumber()); // Ánh xạ phone
         user.setRoles(Set.of(roleRepository.findRoleById(RoleType.USER.value)));
 
+        // Lưu user vào cơ sở dữ liệu
         userRepository.save(user);
 
+        // Tạo đối tượng Customer và ánh xạ dữ liệu từ RegisterRequest
         var customer = new Customer();
         customer.setFullName(registerRequest.getFullName());
         customer.setPhoneNumber(registerRequest.getPhoneNumber());
@@ -57,10 +62,9 @@ public class UserService implements UserDetailsService {
         customer.setDoB(registerRequest.getDoB());
         customer.setUserId(user);
 
+        // Lưu customer vào cơ sở dữ liệu
         customerRepository.save(customer);
-        log.info("User and Customer registered with username: {}", registerRequest.getUsername());
     }
-
 
     public boolean existsByUsername(String username) {
         return userRepository.findByUsername(username) != null;
