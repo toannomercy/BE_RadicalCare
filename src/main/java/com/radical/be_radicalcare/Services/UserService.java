@@ -92,6 +92,10 @@ public class UserService implements UserDetailsService {
         return Optional.ofNullable(userRepository.findByUsername(username));
     }
 
+    public void updateUser(User user) {
+        userRepository.save(user);  // Lưu thông tin người dùng
+    }
+
     public void forgotPassWord(String email) {
         var user = userRepository.findByEmail(email);
         if (user == null) {

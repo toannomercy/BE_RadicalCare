@@ -21,6 +21,9 @@ public class CustomerService {
     public Optional<Customer> getCustomerByUserId(String userId) {
         return customerRepository.findByUserId_Id(userId);
     }
+    public void updateCustomer(Customer customer) {
+        customerRepository.save(customer);  // Lưu thông tin khách hàng
+    }
 
     public void saveOrUpdateCustomer(String userId, CustomerPostVm customerPostVm) {
         log.info("Saving customer with dateOfBirth: {}", customerPostVm.doB());

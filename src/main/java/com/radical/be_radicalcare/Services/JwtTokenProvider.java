@@ -44,7 +44,7 @@ public class JwtTokenProvider {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Authentication authentication, String userId) {
+    public String generateToken(Authentication authentication, String userId, String customerId) {
         String username = authentication.getName();
         List<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -53,11 +53,10 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + 604800000);
 
-        log.info("Generating JWT for username: {} and userId: {}", username, userId);
-
         return Jwts.builder()
                 .setSubject(username)
                 .claim("userId", userId)
+                .claim("customerId", customerId)
                 .claim("authorities", authorities)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -100,6 +99,15 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.get("userId", String.class);
+    }
+
+    public String getCustomerIdFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("customerId", String.class);
     }
 
     public List<String> getRolesFromToken(String token) {

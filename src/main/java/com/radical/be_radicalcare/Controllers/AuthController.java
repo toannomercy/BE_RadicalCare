@@ -4,9 +4,11 @@ import com.radical.be_radicalcare.Dto.JwtResponse;
 import com.radical.be_radicalcare.Dto.LoginRequest;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
 import com.radical.be_radicalcare.Entities.User;
+import com.radical.be_radicalcare.Services.CustomerService;
 import com.radical.be_radicalcare.Services.JwtTokenProvider;
 import com.radical.be_radicalcare.Services.UserService;
 import com.radical.be_radicalcare.ViewModels.UserGetVm;
+import com.radical.be_radicalcare.ViewModels.UserPutVm;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +20,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import com.radical.be_radicalcare.Entities.Customer;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -29,6 +31,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final CustomerService customerService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
@@ -44,9 +47,11 @@ public class AuthController {
             String userId = userService.findByUsername(loginRequest.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"))
                     .getId();
-
+            String customerId = customerService.getCustomerByUserId(userId)
+                    .map(Customer::getId)
+                    .orElse(null);
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtTokenProvider.generateToken(authentication, userId);
+            String jwt = jwtTokenProvider.generateToken(authentication, userId, customerId);
 
             return ResponseEntity.ok(new JwtResponse(jwt));
         } catch (BadCredentialsException e) {
@@ -107,6 +112,54 @@ public class AuthController {
         userService.resetPassword(token, newPassword);  // Reset mật khẩu dựa trên token
         return ResponseEntity.ok("Password reset successfully");
     }
+
+    @PutMapping("/update-profile")
+    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+    public ResponseEntity<?> updateUserAndCustomerProfile(Authentication authentication,
+                                                          @RequestBody UserPutVm userPutVm) {
+        try {
+            String username = authentication.getName();
+
+            // Lấy thông tin User
+            User user = userService.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Cập nhật thông tin User (chỉ cập nhật nếu không null)
+            if (userPutVm.fullName() != null) {
+                user.setFullName(userPutVm.fullName());
+            }
+            if (userPutVm.email() != null) {
+                user.setEmail(userPutVm.email());
+            }
+            if (userPutVm.phone() != null) {
+                user.setPhone(userPutVm.phone());
+            }
+            userService.updateUser(user);
+
+            // Lấy thông tin Customer liên kết với User
+            Customer customer = customerService.getCustomerByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+            // Cập nhật thông tin Customer (chỉ cập nhật nếu không null)
+            if (userPutVm.doB() != null) {
+                customer.setDoB(userPutVm.doB());
+            }
+            if (userPutVm.address() != null) {
+                customer.setAddress(userPutVm.address());
+            }
+            if (userPutVm.fullName() != null) {
+                customer.setFullName(userPutVm.fullName());
+            }
+            customerService.updateCustomer(customer);
+
+            return ResponseEntity.ok("User and Customer profile updated successfully");
+        } catch (Exception e) {
+            log.error("Error updating profile: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred: " + e.getMessage());
+        }
+    }
+
 }
 
 
