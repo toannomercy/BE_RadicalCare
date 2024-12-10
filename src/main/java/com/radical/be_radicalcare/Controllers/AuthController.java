@@ -150,6 +150,9 @@ public class AuthController {
             if (userPutVm.fullName() != null) {
                 customer.setFullName(userPutVm.fullName());
             }
+            if (userPutVm.phone() != null) {
+                customer.setPhoneNumber(userPutVm.phone());
+            }
             customerService.updateCustomer(customer);
 
             return ResponseEntity.ok("User and Customer profile updated successfully");

@@ -23,7 +23,7 @@ public record AppointmentGetVm(
                 .status(appointment.getStatus())
                 .dateCreated(appointment.getDateCreated())
                 .details(appointment.getAppointmentDetails().stream()
-                        .map(AppointmentDetailGetVm::fromEntity)
+                        .map(AppointmentDetailGetVm::fromEntity) // Chuyển đổi chi tiết
                         .collect(Collectors.toList()))
                 .build();
     }

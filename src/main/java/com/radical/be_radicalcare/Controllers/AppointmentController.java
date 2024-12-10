@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
@@ -23,15 +24,23 @@ public class AppointmentController {
 
     @GetMapping
     public ResponseEntity<?> getAllAppointments() {
+        // Lấy danh sách Appointment từ service
         List<Appointment> appointments = appointmentService.getAllAppointments();
 
+        // Chuyển đổi từ Appointment sang AppointmentGetVm
+        List<AppointmentGetVm> appointmentVms = appointments.stream()
+                .map(AppointmentGetVm::fromEntity) // Sử dụng phương thức fromEntity
+                .collect(Collectors.toList());
+
+        // Tạo response trả về
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
         response.put("message", "Appointments retrieved successfully");
-        response.put("data", appointments);
+        response.put("data", appointmentVms); // Trả về danh sách AppointmentGetVm
 
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getAppointmentById(@PathVariable Long id) {
@@ -53,20 +62,6 @@ public class AppointmentController {
         Map<String, Object> response = new HashMap<>();
         response.put("status", 201);
         response.put("message", "Appointment created successfully");
-
-        return ResponseEntity.status(201).body(response);
-    }
-
-    @PostMapping("/quick-create")
-    public ResponseEntity<?> createQuickAppointment(
-            @RequestParam String customerId,
-            @RequestParam List<Long> serviceIds) {
-        Appointment appointment = appointmentService.createQuickAppointment(customerId, serviceIds);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", 201);
-        response.put("message", "Quick appointment created successfully");
-        response.put("data", appointment);
 
         return ResponseEntity.status(201).body(response);
     }

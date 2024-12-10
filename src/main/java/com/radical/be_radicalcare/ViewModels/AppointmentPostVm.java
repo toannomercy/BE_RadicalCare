@@ -13,6 +13,7 @@ public record AppointmentPostVm(
         String status,
         String customerId,
         List<Long> serviceIds,
+        List<LocalDate> serviceDates, // Thêm danh sách ngày dịch vụ
         Double totalAmount
 ) {
     public Appointment toEntity() {
@@ -21,7 +22,7 @@ public record AppointmentPostVm(
         appointment.setStatus(this.status);
         appointment.setTotalAmount(this.totalAmount);
 
-        if(this.customerId != null) {
+        if (this.customerId != null) {
             Customer customer = new Customer();
             customer.setId(this.customerId);
             appointment.setCustomer(customer);

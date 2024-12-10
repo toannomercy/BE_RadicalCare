@@ -105,20 +105,23 @@ public class VehicleController {
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/vehicles")
     public ResponseEntity<?> getAllVehicles(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") int page, // Trang hiện tại (mặc định là 0)
+            @RequestParam(required = false) Integer size, // Kích thước trang, có thể null
             @RequestParam(defaultValue = "chassisNumber") String sortBy
     ) {
-        // Lấy tất cả các phương tiện theo phân trang
-        Page<Vehicle> vehiclePage = vehicleService.getAllVehicles(page, size, sortBy);
+        // Đặt kích thước mặc định nếu không được truyền
+        int pageSize = (size == null || size <= 0) ? Integer.MAX_VALUE : size;
 
-        // Chuyển đổi dữ liệu sang ViewModel
+        // Gọi service để lấy dữ liệu phân trang
+        Page<Vehicle> vehiclePage = vehicleService.getAllVehicles(page, pageSize, sortBy);
+
+        // Chuyển đổi sang ViewModel
         List<VehicleGetVm> vehicles = vehiclePage.getContent()
                 .stream()
                 .map(VehicleGetVm::fromEntity)
                 .toList();
 
-        // Chuẩn bị response
+        // Chuẩn bị phản hồi
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
         response.put("message", "Vehicles retrieved successfully");

@@ -41,15 +41,26 @@ public class AppointmentService {
         Customer customer = customerRepository.findById(appointmentPostVm.customerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
 
+        // Tạo Appointment với ngày tạo mặc định là ngày hiện tại
         Appointment appointment = Appointment.builder()
-                .dateCreated(appointmentPostVm.dateCreated())
+                .dateCreated(LocalDate.now()) // Ngày tạo phiếu
                 .status("Pending")
                 .customer(customer)
                 .build();
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        Double totalAmount = saveAppointmentDetails(appointmentPostVm.serviceIds(), savedAppointment);
+        // Lấy một ngày chung cho tất cả dịch vụ, nếu không có sẽ sử dụng ngày hiện tại
+        LocalDate commonServiceDate = appointmentPostVm.serviceDates() != null && !appointmentPostVm.serviceDates().isEmpty()
+                ? appointmentPostVm.serviceDates().get(0) // Lấy ngày đầu tiên trong danh sách serviceDates (nếu có)
+                : LocalDate.now(); // Nếu không có, dùng ngày hiện tại làm mặc định
+
+        // Lưu chi tiết các dịch vụ với ngày chung
+        Double totalAmount = saveAppointmentDetails(
+                appointmentPostVm.serviceIds(),
+                savedAppointment,
+                commonServiceDate // Sử dụng ngày chung cho tất cả dịch vụ
+        );
 
         savedAppointment.setTotalAmount(totalAmount);
         appointmentRepository.save(savedAppointment);
@@ -65,8 +76,15 @@ public class AppointmentService {
         existingAppointment.setDateCreated(appointmentPostVm.dateCreated());
         existingAppointment.setCustomer(customer);
 
+        // Xóa chi tiết dịch vụ cũ và lưu mới với ngày chung
         appointmentDetailRepository.deleteAll(existingAppointment.getAppointmentDetails());
-        saveAppointmentDetails(appointmentPostVm.serviceIds(), existingAppointment);
+        saveAppointmentDetails(
+                appointmentPostVm.serviceIds(),
+                existingAppointment,
+                appointmentPostVm.serviceDates() != null && !appointmentPostVm.serviceDates().isEmpty()
+                        ? appointmentPostVm.serviceDates().get(0) // Lấy ngày chung cho tất cả dịch vụ
+                        : LocalDate.now()
+        );
 
         appointmentRepository.save(existingAppointment);
     }
@@ -77,22 +95,6 @@ public class AppointmentService {
 
         appointmentDetailRepository.deleteAll(appointment.getAppointmentDetails());
         appointmentRepository.delete(appointment);
-    }
-
-    public Appointment createQuickAppointment(String customerId, List<Long> serviceIds) {
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-
-        Appointment appointment = Appointment.builder()
-                .dateCreated(LocalDate.now())
-                .status("Pending")
-                .customer(customer)
-                .build();
-
-        Appointment savedAppointment = appointmentRepository.save(appointment);
-
-        saveAppointmentDetails(serviceIds, savedAppointment);
-        return savedAppointment;
     }
 
     public List<AppointmentGetVm> searchAppointments(Long customerId, LocalDate dateCreated, List<Long> serviceIds) {
@@ -109,7 +111,13 @@ public class AppointmentService {
                 .collect(Collectors.toList());
     }
 
-    private Double saveAppointmentDetails(List<Long> serviceIds, Appointment appointment) {
+    private Double saveAppointmentDetails(List<Long> serviceIds, Appointment appointment, LocalDate serviceDate) {
+        // Kiểm tra số lượng serviceIds và serviceDates có khớp không
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            throw new IllegalArgumentException("Service IDs cannot be empty.");
+        }
+
+        // Lưu chi tiết dịch vụ vào danh sách
         List<AppointmentDetail> details = serviceIds.stream()
                 .map(serviceId -> {
                     MotorService service = motorServicesRepository.findById(serviceId)
@@ -118,15 +126,16 @@ public class AppointmentService {
                     return AppointmentDetail.builder()
                             .appointment(appointment)
                             .motorService(service)
-                            .serviceDate(LocalDate.now())
+                            .serviceDate(serviceDate) // Gán ngày chung cho tất cả các dịch vụ
                             .serviceCost(service.getCostId().getBaseCost())
                             .description(service.getServiceName())
                             .build();
                 })
-                .toList();
+                .collect(Collectors.toList());
 
         appointmentDetailRepository.saveAll(details);
 
+        // Tính tổng chi phí của tất cả các dịch vụ
         return details.stream()
                 .mapToDouble(AppointmentDetail::getServiceCost)
                 .sum();

@@ -1,5 +1,6 @@
 package com.radical.be_radicalcare.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +31,6 @@ public class AppointmentDetail {
     private MotorService motorService;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id", referencedColumnName = "id")
-    @ToString.Exclude
+    @JsonIgnore // Ngăn đệ quy ngược về Appointment
     private Appointment appointment;
 }

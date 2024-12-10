@@ -8,20 +8,18 @@ import java.time.LocalDate;
 @Builder
 public record AppointmentDetailGetVm(
         Long id,
-        String description,
-        LocalDate serviceDate,
+        String serviceName,
         Double serviceCost,
-        MotorServiceGetVm motorService,
-        Long appointmentId
-) {
-    public static AppointmentDetailGetVm fromEntity(AppointmentDetail appointmentDetail) {
+        String serviceDescription,
+        LocalDate serviceDate) {
+
+    public static AppointmentDetailGetVm fromEntity(AppointmentDetail detail) {
         return AppointmentDetailGetVm.builder()
-                .id(appointmentDetail.getId())
-                .description(appointmentDetail.getDescription())
-                .serviceDate(appointmentDetail.getServiceDate())
-                .serviceCost(appointmentDetail.getServiceCost())
-                .motorService(MotorServiceGetVm.from(appointmentDetail.getMotorService()))
-                .appointmentId(appointmentDetail.getAppointment().getId())
+                .id(detail.getId())
+                .serviceName(detail.getMotorService().getServiceName())
+                .serviceCost(detail.getMotorService().getCostId().getBaseCost())
+                .serviceDescription(detail.getDescription())
+                .serviceDate(detail.getServiceDate())
                 .build();
     }
 }
