@@ -6,5 +6,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class JwtResponse {
     private String token;
+    private String fullName;
+    private String role;
 }
 
