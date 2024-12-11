@@ -3,7 +3,12 @@ package com.radical.be_radicalcare.Services;
 import com.radical.be_radicalcare.Constants.Provider;
 import com.radical.be_radicalcare.Constants.RoleType;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
+
+import com.radical.be_radicalcare.Entities.Customer;
+import com.radical.be_radicalcare.Entities.Role;
+
 import com.radical.be_radicalcare.Entities.User;
+import com.radical.be_radicalcare.Repositories.ICustomerRepository;
 import com.radical.be_radicalcare.Repositories.IRoleRepository;
 import com.radical.be_radicalcare.Repositories.IUserRepository;
 import jakarta.mail.MessagingException;
@@ -29,22 +34,38 @@ import java.util.UUID;
 public class UserService implements UserDetailsService {
 
     private final IUserRepository userRepository;
+    private final ICustomerRepository customerRepository;
+
     private final IRoleRepository roleRepository;
     private final EmailService emailService;
 
 
 
     public void registerUser(RegisterRequest registerRequest) {
+        // Tạo đối tượng User và ánh xạ dữ liệu từ RegisterRequest
         var user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setFullName(registerRequest.getFullName());
         user.setPassword(new BCryptPasswordEncoder().encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
         user.setProvider(Provider.LOCAL);
+        user.setFullName(registerRequest.getFullName()); // Ánh xạ fullname
+        user.setPhone(registerRequest.getPhoneNumber()); // Ánh xạ phone
         user.setRoles(Set.of(roleRepository.findRoleById(RoleType.USER.value)));
 
+        // Lưu user vào cơ sở dữ liệu
         userRepository.save(user);
-        log.info("User registered with username: {}", registerRequest.getUsername());
+
+        // Tạo đối tượng Customer và ánh xạ dữ liệu từ RegisterRequest
+        var customer = new Customer();
+        customer.setFullName(registerRequest.getFullName());
+        customer.setPhoneNumber(registerRequest.getPhoneNumber());
+        customer.setAddress(registerRequest.getAddress());
+        customer.setDoB(registerRequest.getDoB());
+        customer.setUserId(user);
+
+        // Lưu customer vào cơ sở dữ liệu
+        customerRepository.save(customer);
     }
 
     public boolean existsByUsername(String username) {
@@ -73,6 +94,10 @@ public class UserService implements UserDetailsService {
 
     public Optional<User> findByUsername(String username) {
         return Optional.ofNullable(userRepository.findByUsername(username));
+    }
+
+    public void updateUser(User user) {
+        userRepository.save(user);  // Lưu thông tin người dùng
     }
 
     public void forgotPassWord(String email) {

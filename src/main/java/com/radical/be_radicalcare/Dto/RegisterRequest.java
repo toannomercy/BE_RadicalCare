@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 @Data
 public class RegisterRequest {
+
     @NotBlank(message = "Full name is required")
     @Size(max = 100, message = "Full name must be less than 100 characters")
     private String fullName;
@@ -29,4 +30,8 @@ public class RegisterRequest {
 
     @Past(message = "Date of birth must be in the past")
     private LocalDate doB;
+
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
+    private String phoneNumber;
 }

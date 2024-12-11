@@ -19,13 +19,35 @@ import java.util.List;
 public class JwtTokenProvider {
 
 
-    private final Key signingKey;
+//    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+//
+//    public String generateToken(Authentication authentication, String userId) {
+//        String username = authentication.getName();
+//        List<String> authorities = authentication.getAuthorities().stream()
+//                .map(GrantedAuthority::getAuthority)
+//                .toList();
+//
+//        Date now = new Date();
+//        int jwtExpirationInMs = 604800000;
+//        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+//
+//        return Jwts.builder()
+//                .setSubject(username)
+//                .claim("userId", userId)
+//                .claim("authorities", authorities)
+//                .setIssuedAt(now)
+//                .setExpiration(expiryDate)
+//                .signWith(signingKey)
+//                .compact();
+//    }
+    private final Key signingKey;  // Khóa mã hóa JWT
+
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Authentication authentication, String userId) {
+    public String generateToken(Authentication authentication, String userId, String customerId) {
         String username = authentication.getName();
         List<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -34,11 +56,10 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + 604800000);
 
-        log.info("Generating JWT for username: {} and userId: {}", username, userId);
-
         return Jwts.builder()
                 .setSubject(username)
                 .claim("userId", userId)
+                .claim("customerId", customerId)
                 .claim("authorities", authorities)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -81,6 +102,15 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.get("userId", String.class);
+    }
+
+    public String getCustomerIdFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("customerId", String.class);
     }
 
     public List<String> getRolesFromToken(String token) {

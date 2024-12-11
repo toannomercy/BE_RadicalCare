@@ -73,4 +73,8 @@ public class Vehicle {
     public List<String> getImageUrls() {
         return vehicleImages.stream().map(VehicleImage::getImageUrl).collect(Collectors.toList());
     }
+    public double getPrice() {
+        return costId != null ? costId.getPrice() : 0.0; // Trả về giá từ CostTable, hoặc 0.0 nếu null
+    }
+
 }

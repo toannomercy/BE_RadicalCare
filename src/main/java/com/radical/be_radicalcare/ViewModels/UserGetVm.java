@@ -14,6 +14,7 @@ public record UserGetVm(
         Boolean accountNonExpired,
         Boolean accountNonLocked,
         Boolean credentialsNonExpired,
+        String full_name,
         Boolean enabled) {
 
     public static UserGetVm fromEntity(User user) {
@@ -28,6 +29,7 @@ public record UserGetVm(
                 .accountNonLocked(user.getAccountNonLocked())
                 .credentialsNonExpired(user.getCredentialsNonExpired())
                 .enabled(user.getEnabled())
+                .full_name(user.getFullName())
                 .build();
     }
 }
