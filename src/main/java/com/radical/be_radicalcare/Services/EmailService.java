@@ -15,12 +15,10 @@ public class EmailService {
 
     public void sendMail(String to, String subject, String token) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
-
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setFrom("noreply@demomailtrap.com");
-
         String htmlContent = "<html>"
                 + "<head>"
                 + "<meta charset='UTF-8'>"

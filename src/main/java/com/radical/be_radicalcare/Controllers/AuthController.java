@@ -1,10 +1,15 @@
 package com.radical.be_radicalcare.Controllers;
 
+import com.radical.be_radicalcare.Constants.RoleType;
 import com.radical.be_radicalcare.Dto.JwtResponse;
 import com.radical.be_radicalcare.Dto.LoginRequest;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
+
 import com.radical.be_radicalcare.Entities.User;
 import com.radical.be_radicalcare.Services.CustomerService;
+
+import com.radical.be_radicalcare.Entities.Role;
+
 import com.radical.be_radicalcare.Services.JwtTokenProvider;
 import com.radical.be_radicalcare.Services.UserService;
 import com.radical.be_radicalcare.ViewModels.UserGetVm;
@@ -22,6 +27,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.radical.be_radicalcare.Entities.Customer;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -54,6 +61,7 @@ public class AuthController {
             String jwt = jwtTokenProvider.generateToken(authentication, userId, customerId);
 
             return ResponseEntity.ok(new JwtResponse(jwt));
+
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -109,7 +117,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token không hợp lệ hoặc đã hết hạn.");
         }
 
-        userService.resetPassword(token, newPassword);  // Reset mật khẩu dựa trên token
+        userService.resetPassword(token, newPassword);
         return ResponseEntity.ok("Password reset successfully");
     }
 

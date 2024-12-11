@@ -1,1 +1,0 @@
-ALTER TABLE customer DROP COLUMN phone_number;

@@ -1,6 +1,7 @@
 package com.radical.be_radicalcare.Services;
 
 import io.jsonwebtoken.*;
+
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class JwtTokenProvider {
+
 
 //    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 //
@@ -39,6 +41,7 @@ public class JwtTokenProvider {
 //                .compact();
 //    }
     private final Key signingKey;  // Khóa mã hóa JWT
+
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

@@ -2,10 +2,11 @@ package com.radical.be_radicalcare.Services;
 
 import com.radical.be_radicalcare.Constants.Provider;
 import com.radical.be_radicalcare.Constants.RoleType;
-import com.radical.be_radicalcare.Controllers.AuthController;
 import com.radical.be_radicalcare.Dto.RegisterRequest;
+
 import com.radical.be_radicalcare.Entities.Customer;
 import com.radical.be_radicalcare.Entities.Role;
+
 import com.radical.be_radicalcare.Entities.User;
 import com.radical.be_radicalcare.Repositories.ICustomerRepository;
 import com.radical.be_radicalcare.Repositories.IRoleRepository;
@@ -13,12 +14,10 @@ import com.radical.be_radicalcare.Repositories.IUserRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,10 +39,13 @@ public class UserService implements UserDetailsService {
     private final IRoleRepository roleRepository;
     private final EmailService emailService;
 
+
+
     public void registerUser(RegisterRequest registerRequest) {
         // Tạo đối tượng User và ánh xạ dữ liệu từ RegisterRequest
         var user = new User();
         user.setUsername(registerRequest.getUsername());
+        user.setFullName(registerRequest.getFullName());
         user.setPassword(new BCryptPasswordEncoder().encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
         user.setProvider(Provider.LOCAL);
@@ -77,6 +79,8 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
 
+        log.info("User found with username: {}", username);
+
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
@@ -105,13 +109,12 @@ public class UserService implements UserDetailsService {
         log.info("User found with email: {}", email);
 
         String token = UUID.randomUUID().toString();
-
-        // Lưu token vào user
         user.setTokenResetPassword(token);
 
         java.util.Date now = new java.util.Date();
         java.sql.Date expiryDate = new java.sql.Date(now.getTime() + 30 * 60 * 1000);
         user.setTokenResetPasswordExpired(expiryDate);
+
 
         userRepository.save(user);
 
@@ -129,12 +132,6 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByTokenResetPassword(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid token!"));
 
-        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
-
-        if (user.getTokenResetPasswordExpired().before(now)) {
-            throw new IllegalArgumentException("Token expired!");
-        }
-
         user.setPassword(new BCryptPasswordEncoder().encode(newPassword));
         user.setTokenResetPassword(null);
         user.setTokenResetPasswordExpired(null);
@@ -142,15 +139,12 @@ public class UserService implements UserDetailsService {
     }
 
     public boolean isTokenValid(String token) {
-        var userOptional = userRepository.findByTokenResetPassword(token);
-        if (userOptional.isEmpty()) {
-            return false;
-        }
+        User user = userRepository.findByTokenResetPassword(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid token!"));
 
-        User user = userOptional.get();
-        return user.getTokenResetPasswordExpired() != null &&
-                user.getTokenResetPasswordExpired().after(new Date()); // Token hợp lệ nếu chưa hết hạn
+        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
+
+        return user.getTokenResetPasswordExpired().after(now);
     }
-
 }
 
