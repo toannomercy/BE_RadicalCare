@@ -64,6 +64,10 @@ public class VehicleService {
 
         saveImages(images, savedVehicle);
     }
+    // Thêm mới method getAllVehiclesWithoutPagination
+    public List<Vehicle> getAllVehiclesWithoutPagination(String sortBy) {
+        return vehicleRepository.findAll(Sort.by(sortBy));
+    }
 
 
     public void updateVehicle(String chassisNumber, VehiclePostVm vehiclePostVm, List<MultipartFile> newImages) throws IOException {

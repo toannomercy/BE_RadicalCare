@@ -102,33 +102,54 @@ public class VehicleController {
         }
     }
 
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @GetMapping("/vehicles")
+//    public ResponseEntity<?> getAllVehicles(
+//            @RequestParam(defaultValue = "0") int page, // Trang hiện tại (mặc định là 0)
+//            @RequestParam(required = false) Integer size, // Kích thước trang, có thể null
+//            @RequestParam(defaultValue = "chassisNumber") String sortBy
+//    ) {
+//        // Đặt kích thước mặc định nếu không được truyền
+//        int pageSize = (size == null || size <= 0) ? Integer.MAX_VALUE : size;
+//
+//        // Gọi service để lấy dữ liệu phân trang
+//        Page<Vehicle> vehiclePage = vehicleService.getAllVehicles(page, pageSize, sortBy);
+//
+//        // Chuyển đổi sang ViewModel
+//        List<VehicleGetVm> vehicles = vehiclePage.getContent()
+//                .stream()
+//                .map(VehicleGetVm::fromEntity)
+//                .toList();
+//
+//        // Chuẩn bị phản hồi
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("status", 200);
+//        response.put("message", "Vehicles retrieved successfully");
+//        response.put("data", vehicles);
+//        response.put("currentPage", vehiclePage.getNumber());
+//        response.put("totalItems", vehiclePage.getTotalElements());
+//        response.put("totalPages", vehiclePage.getTotalPages());
+//
+//        return ResponseEntity.ok(response);
+//    }
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
-    @GetMapping("/vehicles")
-    public ResponseEntity<?> getAllVehicles(
-            @RequestParam(defaultValue = "0") int page, // Trang hiện tại (mặc định là 0)
-            @RequestParam(required = false) Integer size, // Kích thước trang, có thể null
+    @GetMapping("/vehicles/all")
+    public ResponseEntity<?> getAllVehiclesWithoutPagination(
             @RequestParam(defaultValue = "chassisNumber") String sortBy
     ) {
-        // Đặt kích thước mặc định nếu không được truyền
-        int pageSize = (size == null || size <= 0) ? Integer.MAX_VALUE : size;
-
-        // Gọi service để lấy dữ liệu phân trang
-        Page<Vehicle> vehiclePage = vehicleService.getAllVehicles(page, pageSize, sortBy);
+        // Lấy toàn bộ danh sách xe không phân trang
+        List<Vehicle> allVehicles = vehicleService.getAllVehiclesWithoutPagination(sortBy);
 
         // Chuyển đổi sang ViewModel
-        List<VehicleGetVm> vehicles = vehiclePage.getContent()
+        List<VehicleGetVm> vehicles = allVehicles
                 .stream()
                 .map(VehicleGetVm::fromEntity)
                 .toList();
 
-        // Chuẩn bị phản hồi
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
-        response.put("message", "Vehicles retrieved successfully");
+        response.put("message", "All vehicles retrieved successfully");
         response.put("data", vehicles);
-        response.put("currentPage", vehiclePage.getNumber());
-        response.put("totalItems", vehiclePage.getTotalElements());
-        response.put("totalPages", vehiclePage.getTotalPages());
 
         return ResponseEntity.ok(response);
     }
