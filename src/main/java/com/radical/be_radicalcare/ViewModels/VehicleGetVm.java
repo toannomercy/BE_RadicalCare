@@ -46,4 +46,5 @@ public record VehicleGetVm(
                 .imageUrls(vehicle.getImageUrls())
                 .build();
     }
+
 }

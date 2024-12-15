@@ -1,6 +1,9 @@
 package com.radical.be_radicalcare.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.radical.be_radicalcare.Constants.Provider;
 import com.radical.be_radicalcare.Validator.Annotation.ValidUsername;
 import jakarta.persistence.*;
@@ -26,6 +29,10 @@ import java.util.stream.Collectors;
 @Entity
 @Builder
 @Table(name = "cart")
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,7 +42,8 @@ public class Cart {
     @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @JsonIgnore
+    @JsonManagedReference
+    @ToString.Exclude
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> items = new ArrayList<>();
 

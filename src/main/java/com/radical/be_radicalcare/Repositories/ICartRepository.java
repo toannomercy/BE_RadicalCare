@@ -11,6 +11,4 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ICartRepository extends JpaRepository<Cart, String> {
-    @Query("SELECT c FROM Cart c LEFT JOIN FETCH c.items WHERE c.userId = :userId")
-    Optional<Cart> findByUserId(@Param("userId") String userId);
 }
