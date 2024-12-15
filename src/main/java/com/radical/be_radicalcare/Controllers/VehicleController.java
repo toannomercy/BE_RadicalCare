@@ -132,7 +132,6 @@ public class VehicleController {
 //
 //        return ResponseEntity.ok(response);
 //    }
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/vehicles/all")
     public ResponseEntity<?> getAllVehiclesWithoutPagination(
             @RequestParam(defaultValue = "chassisNumber") String sortBy
@@ -154,7 +153,6 @@ public class VehicleController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/vehicle/{id}")
     public ResponseEntity<?> getVehicleById(@PathVariable String id) {
         return vehicleService.getVehicleById(id)

@@ -14,7 +14,7 @@ public record FilterGetVm(
         String categoryName,
         String color,
         boolean sold,
-        double cost,
+        String price,
         List<String> imageUrls
 ) {
     public static FilterGetVm from(Vehicle vehicle) {
@@ -25,7 +25,9 @@ public record FilterGetVm(
                 .categoryName(vehicle.getCategoryId() != null ? vehicle.getCategoryId().getCategoryName() : null)
                 .color(vehicle.getColor())
                 .sold(vehicle.getSold())
-                .cost(vehicle.getCostId() != null ? vehicle.getCostId().getBaseCost() : 0)
+                .price(vehicle.getCostId() != null
+                        ? String.format("%,.0f VNĐ", vehicle.getCostId().getBaseCost())
+                        : "0")
                 .imageUrls(vehicle.getImageUrls())
                 .build();
     }

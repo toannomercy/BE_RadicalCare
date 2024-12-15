@@ -14,6 +14,10 @@ import com.radical.be_radicalcare.Services.JwtTokenProvider;
 import com.radical.be_radicalcare.Services.UserService;
 import com.radical.be_radicalcare.ViewModels.UserGetVm;
 import com.radical.be_radicalcare.ViewModels.UserPutVm;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +29,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import com.radical.be_radicalcare.Entities.Customer;
 
@@ -42,7 +47,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response, HttpSession session) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -51,27 +56,63 @@ public class AuthController {
                     )
             );
 
-            String userId = userService.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"))
-                    .getId();
-            String customerId = customerService.getCustomerByUserId(userId)
-                    .map(Customer::getId)
-                    .orElse(null);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtTokenProvider.generateToken(authentication, userId, customerId);
+            User user = userService.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-            return ResponseEntity.ok(new JwtResponse(jwt));
+            String jwt = jwtTokenProvider.generateToken(authentication, user.getId(), null);
+            String role = user.getRoles().iterator().next().getName().name();
 
+            // Lưu JWT vào Cookie
+            Cookie jwtCookie = new Cookie("token", jwt);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge(24 * 60 * 60); // 1 ngày
+            response.addCookie(jwtCookie);
+
+            // Lưu vào session
+            session.setAttribute("username", user.getUsername());
+            session.setAttribute("role", role);
+
+            return ResponseEntity.ok(new JwtResponse(jwt, user.getFullName(), role));
         } catch (BadCredentialsException e) {
-            log.error("Invalid credentials for user: {}", loginRequest.getUsername());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid username or Password");
-        } catch (Exception e) {
-            log.error("Error during authentication: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        // Xóa session
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        // Xóa cookie JWT
+        Cookie jwtCookie = new Cookie("token", null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0);
+        response.addCookie(jwtCookie);
+
+        return ResponseEntity.ok("Logout successful");
+    }
+
+
+    @GetMapping("/login/oauth2/code/google")
+    public ResponseEntity<?> handleGoogleOAuth2(Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String jwt = jwtTokenProvider.generateToken(
+                authentication,
+                user.getId(),
+                null // Nếu không có Customer ID
+        );
+
+        return ResponseEntity.ok(new JwtResponse(jwt, user.getFullName(), user.getRoles().iterator().next().getName().name()));
+    }
+
 
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/fetch-user")
@@ -105,20 +146,31 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestParam String email){
-        userService.forgotPassWord(email);
-        return ResponseEntity.ok("Password reset link sent to your email: " + email);
+    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+        try {
+            userService.forgotPassWord(email);
+            return ResponseEntity.ok("Password reset link sent to your email: " + email);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not found: " + email);
+        } catch (Exception e) {
+            log.error("Error during forgot password: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while processing your request.");
+        }
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
-        boolean isTokenValid = userService.isTokenValid(token);
-        if (!isTokenValid) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token không hợp lệ hoặc đã hết hạn.");
+        try {
+            boolean isTokenValid = userService.isTokenValid(token);
+            if (!isTokenValid) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token.");
+            }
+            userService.resetPassword(token, newPassword);
+            return ResponseEntity.ok("Password reset successfully.");
+        } catch (Exception e) {
+            log.error("Error during password reset: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while resetting password.");
         }
-
-        userService.resetPassword(token, newPassword);
-        return ResponseEntity.ok("Password reset successfully");
     }
 
     @PutMapping("/update-profile")

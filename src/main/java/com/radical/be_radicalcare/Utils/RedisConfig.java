@@ -1,4 +1,4 @@
-package com.radical.be_radicalcare.Config;
+package com.radical.be_radicalcare.Utils;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
