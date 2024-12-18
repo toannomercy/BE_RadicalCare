@@ -20,7 +20,7 @@ public class FilterController {
 
     private final FilterService filterService;
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping
     public ResponseEntity<?> filterVehicles(@RequestParam MultiValueMap<String, String> queryParams) {
         // Lấy danh sách segments, nếu không có thì trả về danh sách rỗng
@@ -65,7 +65,7 @@ public class FilterController {
     }
 
     // API để lấy các segment duy nhất
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/segments")
     public ResponseEntity<?> getSegments() {
         Set<String> segments = filterService.getUniqueSegments();
@@ -76,7 +76,7 @@ public class FilterController {
     }
 
     // API để lấy các màu sắc duy nhất
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/colors")
     public ResponseEntity<?> getColors() {
         Set<String> colors = filterService.getUniqueColors();

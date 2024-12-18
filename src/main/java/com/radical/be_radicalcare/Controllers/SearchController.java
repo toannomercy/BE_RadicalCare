@@ -39,7 +39,6 @@ public class SearchController {
 //    }
 
     // Lấy danh sách lịch sử tìm kiếm
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/recent")
     public ResponseEntity<?> getRecentSearches(@RequestHeader("Authorization") String authorizationHeader) {
         String token = authorizationHeader.replace("Bearer ", "");
@@ -54,7 +53,6 @@ public class SearchController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @DeleteMapping("/clear/recent")
     public ResponseEntity<?> clearRecentSearches(
             @RequestHeader("Authorization") String authorizationHeader,
@@ -75,8 +73,6 @@ public class SearchController {
         return ResponseEntity.ok(response);
     }
 
-    // Xóa toàn bộ lịch sử tìm kiếm
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @DeleteMapping("/delete/recent")
     public ResponseEntity<?> deleteRecentSearches(@RequestHeader("Authorization") String authorizationHeader) {
         // Trích xuất userId từ token JWT
