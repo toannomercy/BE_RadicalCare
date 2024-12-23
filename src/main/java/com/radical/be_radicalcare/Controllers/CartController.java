@@ -35,7 +35,7 @@ public class CartController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/cart/{userId}")
     public ResponseEntity<?> getCartItems(@PathVariable String userId) {
         try {
@@ -53,7 +53,7 @@ public class CartController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @PutMapping("/cart/update")
     public ResponseEntity<?> updateCartItem(@RequestBody CartItemGetVm cartItemVm) {
         try {
@@ -70,7 +70,7 @@ public class CartController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @DeleteMapping("/cart/remove/{itemId}")
     public ResponseEntity<?> removeItemFromCart(@PathVariable String itemId) {
         try {
@@ -87,7 +87,7 @@ public class CartController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @DeleteMapping("/cart/clear/{userId}")
     public ResponseEntity<?> clearCart(@PathVariable String userId) {
         try {

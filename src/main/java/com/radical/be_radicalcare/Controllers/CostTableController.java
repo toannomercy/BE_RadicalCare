@@ -58,7 +58,7 @@ public class CostTableController {
                 });
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/cost-table")
     public ResponseEntity<?> createCostTable (@RequestBody CostTablePostVm costTablePostVm){
         costTableService.addCostTable(costTablePostVm.toCostTable());

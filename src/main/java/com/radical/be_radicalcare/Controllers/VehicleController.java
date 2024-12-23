@@ -173,7 +173,7 @@ public class VehicleController {
                 });
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/vehicle", consumes = "multipart/form-data")
     public ResponseEntity<?> createVehicle(@RequestPart("vehiclePostVm") VehiclePostVm vehiclePostVm,
                                            @RequestPart("images") List<MultipartFile> images) {
