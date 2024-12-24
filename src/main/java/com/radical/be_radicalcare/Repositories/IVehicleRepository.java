@@ -33,5 +33,6 @@ public interface IVehicleRepository extends
             "LEFT JOIN FETCH v.costId " +
             "WHERE (:keyword IS NULL OR v.vehicleName LIKE %:keyword%)")
     Page<Vehicle> findAllWithRelations(@Param("keyword") String keyword, Pageable pageable);
+    Optional<Vehicle> findByChassisNumber(String chassisNumber);
 }
 

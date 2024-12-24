@@ -28,89 +28,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-//    @Override
-//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-//            throws ServletException, IOException {
-//
-//        String requestURI = request.getRequestURI();
-//        String token = request.getHeader("Authorization");
-//
-//
-//        if (requestURI.equals("/api/v1/auth/register") ||
-//                requestURI.equals("/api/v1/auth/login") ||
-//                requestURI.equals("/api/v1/auth/forgot-password") ||
-//                requestURI.equals("/api/v1/login/oauth2/code/google")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-//
-//        if (token != null && token.startsWith("Bearer ")) {
-//            token = token.substring(7);
-//
-//            if (jwtTokenProvider.validateToken(token)) {
-//                String username = jwtTokenProvider.getUsernameFromJWT(token);
-//
-//                String userId = jwtTokenProvider.getUserIdFromJWT(token);
-//
-//                // Lấy authorities từ token
-//                List<String> roles = jwtTokenProvider.getRolesFromToken(token);
-//
-//                List<SimpleGrantedAuthority> authorities = roles.stream()
-//                        .map(SimpleGrantedAuthority::new)
-//                        .collect(Collectors.toList());
-//
-//                // Tạo đối tượng xác thực
-//                UsernamePasswordAuthenticationToken authentication =
-//                        new UsernamePasswordAuthenticationToken(username, null, authorities);
-//                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//                SecurityContextHolder.getContext().setAuthentication(authentication);
-//            }
-//        }
-//        filterChain.doFilter(request, response);
-//    }
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-    throws ServletException, IOException {
+            throws ServletException, IOException {
 
-        String token = getTokenFromHeaderOrCookie(request); // Lấy token từ header hoặc cookie
-        System.out.println("Token in JwtAuthenticationFilter: " + token);
+        // Lấy token từ Header hoặc Cookie
+        String token = getTokenFromHeaderOrCookie(request);
         String requestURI = request.getRequestURI();
 
-    // Bỏ qua xác thực cho các endpoint public
-    if (requestURI.equals("/api/v1/auth/register") ||
-            requestURI.equals("/api/v1/auth/login") ||
-            requestURI.equals("/api/v1/auth/forgot-password") ||
-            requestURI.equals("/api/v1/login/oauth2/code/google")) {
-        filterChain.doFilter(request, response);
-        return;
-    }
+        // Log thông tin request
+        System.out.println("Request URI: " + requestURI);
+        System.out.println("Token received: " + token);
 
-    // Xử lý token nếu có
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-        String username = jwtTokenProvider.getUsernameFromJWT(token);
-        List<String> roles = jwtTokenProvider.getRolesFromToken(token);
+        // Bỏ qua xác thực cho các endpoint public
+        if (isPublicEndpoint(requestURI)) {
+            System.out.println("Public endpoint accessed: " + requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        // Tạo đối tượng xác thực
-        List<SimpleGrantedAuthority> authorities = roles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(username, null, authorities);
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-            setAuthentication(token, request);
-
+        // Xử lý token nếu có
+        if (token != null) {
+            System.out.println("Validating token: " + token);
+            if (jwtTokenProvider.validateToken(token)) {
+                System.out.println("Token is valid.");
+                setAuthentication(token, request);
+            } else {
+                System.out.println("Token is invalid.");
+            }
+        } else {
+            System.out.println("No token provided.");
         }
 
         filterChain.doFilter(request, response);
     }
 
-    // Hàm lấy token từ header hoặc cookie
+    private boolean isPublicEndpoint(String requestURI) {
+        return requestURI.equals("/api/v1/auth/register") ||
+                requestURI.equals("/api/v1/auth/login") ||
+                requestURI.equals("/api/v1/auth/forgot-password") ||
+                requestURI.equals("/api/v1/login/oauth2/code/google");
+    }
+
     private String getTokenFromHeaderOrCookie(HttpServletRequest request) {
         // Lấy token từ header Authorization
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            System.out.println("Token found in header: " + bearerToken.substring(7));
             return bearerToken.substring(7);
         }
 
@@ -118,24 +82,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("token".equals(cookie.getName())) {
+                    System.out.println("Token found in cookie: " + cookie.getValue());
                     return cookie.getValue();
                 }
             }
         }
 
+        System.out.println("No token found in header or cookie.");
         return null; // Không tìm thấy token
     }
-    // Thiết lập SecurityContextHolder
-    private void setAuthentication(String token, HttpServletRequest request) {
-        String username = jwtTokenProvider.getUsernameFromJWT(token);
-        List<SimpleGrantedAuthority> authorities = jwtTokenProvider.getRolesFromToken(token)
-                .stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
 
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(username, null, authorities);
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    private void setAuthentication(String token, HttpServletRequest request) {
+        try {
+            String username = jwtTokenProvider.getUsernameFromJWT(token);
+            List<SimpleGrantedAuthority> authorities = jwtTokenProvider.getRolesFromToken(token)
+                    .stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            System.out.println("Authentication details:");
+            System.out.println("Username: " + username);
+            System.out.println("Authorities: " + authorities);
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            // Đặt authentication vào SecurityContextHolder
+            if (authentication != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+
+            System.out.println("Authentication set successfully.");
+        } catch (Exception e) {
+            System.out.println("Error setting authentication: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -95,6 +95,9 @@ public class SecurityConfig {
         return http
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/register",
                                 "/api/v1/auth/login",
@@ -113,6 +116,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/vehicles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/vehicle/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/cart/add").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/orders/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/v1/cart/**").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasAnyAuthority("USER", "ADMIN")
@@ -141,12 +145,6 @@ public class SecurityConfig {
                         .rememberMeCookieName("radical")
                         .tokenValiditySeconds(24 * 60 * 60)
                         .userDetailsService(userDetailsService())
-                )
-                .sessionManagement(sessionManagement ->
-                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                )
-                .sessionManagement(sessionManagement ->
-                        sessionManagement.maximumSessions(1).expiredUrl("/login")
                 )
                 .httpBasic(httpBasic ->
                         httpBasic.realmName("radical")
