@@ -39,6 +39,38 @@ public class UserService implements UserDetailsService {
 
     private final IRoleRepository roleRepository;
     private final EmailService emailService;
+    public Optional<User> findByEmail(String email) {
+        return Optional.ofNullable(userRepository.findByEmail(email));
+    }
+
+    public User saveGoogleUser(String googleId, String email, String fullName) {
+        // Kiểm tra User đã tồn tại hay chưa
+        User existingUser = userRepository.findByUsername(googleId);
+        if (existingUser != null) {
+            return existingUser; // Trả về User nếu đã tồn tại
+        }
+
+        // Tạo User mới
+        User newUser = new User();
+        newUser.setUsername(googleId); // Google ID làm username
+        newUser.setEmail(email);
+        newUser.setFullName(fullName);
+        newUser.setProvider(Provider.GOOGLE);
+        newUser.setPassword("N/A"); // Mật khẩu không cần thiết cho tài khoản Google
+        newUser.setRoles(Set.of(roleRepository.findRoleById(RoleType.USER.value))); // Gán vai trò mặc định là USER
+
+        // Lưu User vào database
+        userRepository.save(newUser);
+
+        // Tạo Customer tương ứng cho User
+        Customer customer = new Customer();
+        customer.setFullName(fullName);
+        customer.setUserId(newUser); // Liên kết Customer với User
+        customerRepository.save(customer);
+
+        return newUser;
+    }
+
 
     public void registerUser(RegisterRequest registerRequest) {
         // Tạo đối tượng User và ánh xạ dữ liệu từ RegisterRequest

@@ -47,7 +47,7 @@ public class SecurityConfig {
 
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
-        String clientId = dotenv.get("OAUTH2_GOOGLE_CLIENT_ID");
+        String clientId = dotenv.get("OAUTH2_GOOGLE_CLIENT_ID_WEB");
         String clientSecret = dotenv.get("OAUTH2_GOOGLE_CLIENT_SECRET");
 
         ClientRegistration googleClientRegistration = ClientRegistration.withRegistrationId("google")
@@ -64,6 +64,26 @@ public class SecurityConfig {
 
         return new InMemoryClientRegistrationRepository(googleClientRegistration);
     }
+
+//    @Bean
+//    public ClientRegistrationRepository clientRegistrationRepository() {
+//        String clientId = dotenv.get("OAUTH2_GOOGLE_CLIENT_ID");
+//        String clientSecret = dotenv.get("OAUTH2_GOOGLE_CLIENT_SECRET");
+//
+//        ClientRegistration googleClientRegistration = ClientRegistration.withRegistrationId("google")
+//                .clientId(clientId)
+//                .clientSecret(clientSecret)
+//                .scope("profile", "email")
+//                .authorizationUri("https://accounts.google.com/o/oauth2/auth")
+//                .tokenUri("https://oauth2.googleapis.com/token")
+//                .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
+//                .userNameAttributeName("sub")
+//                .redirectUri("http://192.168.1.33:8080/login/oauth2/code/google")
+//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+//                .build();
+//
+//        return new InMemoryClientRegistrationRepository(googleClientRegistration);
+//    }
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -94,9 +114,9 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/auth/forgot-password").permitAll()
+                        .requestMatchers("/api/v1/auth/forgot-password","/api/v1/auth/register","/api/v1/auth/oauth/google", "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/oauth/google").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reset-password/shown").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/category").hasAnyAuthority("USER", "ADMIN")
