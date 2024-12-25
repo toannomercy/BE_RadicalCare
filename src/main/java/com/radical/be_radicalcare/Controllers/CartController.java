@@ -23,11 +23,11 @@ public class CartController {
     @PostMapping("/cart/add")
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     public ResponseEntity<?> addItemToCart(@RequestBody CartItemGetVm cartItemVm, Authentication authentication) {
-        log.info("Received request to add item to cart: {}", cartItemVm);
+        log.info("[POST] /cart/add - Request to add item to cart: {}", cartItemVm);
 
         try {
-            // Handle userId from authentication if not provided
             if (cartItemVm.userId() == null || cartItemVm.userId().isEmpty()) {
+                log.debug("User ID not provided. Extracting from authentication.");
                 cartItemVm = CartItemGetVm.builder()
                         .id(cartItemVm.id())
                         .vehicle(cartItemVm.vehicle())
@@ -36,7 +36,7 @@ public class CartController {
                         .price(cartItemVm.price())
                         .subtotal(cartItemVm.subtotal())
                         .build();
-                log.debug("Updated cartItemVm with userId from authentication: {}", cartItemVm);
+                log.debug("Updated CartItemGetVm: {}", cartItemVm);
             }
 
             cartService.addItemToCart(cartItemVm);
@@ -47,7 +47,7 @@ public class CartController {
             response.put("message", "Item added to cart successfully");
             return ResponseEntity.status(201).body(response);
         } catch (Exception e) {
-            log.error("Failed to add item to cart: {}", e.getMessage(), e);
+            log.error("Error adding item to cart: {}", e.getMessage(), e);
             Map<String, Object> response = new HashMap<>();
             response.put("status", 500);
             response.put("message", "Error adding item to cart: " + e.getMessage());

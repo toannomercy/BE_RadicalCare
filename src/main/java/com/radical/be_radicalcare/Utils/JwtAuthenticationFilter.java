@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,7 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -37,27 +38,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
 
         // Log thông tin request
-        System.out.println("Request URI: " + requestURI);
-        System.out.println("Token received: " + token);
+        log.info("Request URI: {}", requestURI);
+        log.info("Token received: {}", token);
 
         // Bỏ qua xác thực cho các endpoint public
         if (isPublicEndpoint(requestURI)) {
-            System.out.println("Public endpoint accessed: " + requestURI);
+            log.info("Public endpoint accessed: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
         // Xử lý token nếu có
         if (token != null) {
-            System.out.println("Validating token: " + token);
+            log.info("Validating token: {}", token);
             if (jwtTokenProvider.validateToken(token)) {
-                System.out.println("Token is valid.");
+                log.info("Token is valid.");
                 setAuthentication(token, request);
             } else {
-                System.out.println("Token is invalid.");
+                log.warn("Token is invalid.");
             }
         } else {
-            System.out.println("No token provided.");
+            log.warn("No token provided.");
         }
 
         filterChain.doFilter(request, response);
@@ -74,21 +75,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Lấy token từ header Authorization
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            System.out.println("Token found in header: " + bearerToken.substring(7));
+            log.debug("Token found in header: {}", bearerToken.substring(7));
             return bearerToken.substring(7);
         }
 
         // Lấy token từ cookie
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
+                log.debug("Cookie name: {}, value: {}", cookie.getName(), cookie.getValue());
                 if ("token".equals(cookie.getName())) {
-                    System.out.println("Token found in cookie: " + cookie.getValue());
+                    log.debug("Token found in cookie: {}", cookie.getValue());
                     return cookie.getValue();
                 }
             }
         }
 
-        System.out.println("No token found in header or cookie.");
+        log.warn("No token found in header or cookie.");
         return null; // Không tìm thấy token
     }
 
@@ -100,23 +102,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
-            System.out.println("Authentication details:");
-            System.out.println("Username: " + username);
-            System.out.println("Authorities: " + authorities);
+            log.info("Authentication details:");
+            log.info("Username: {}", username);
+            log.info("Authorities: {}", authorities);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             // Đặt authentication vào SecurityContextHolder
-            if (authentication != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
-            System.out.println("Authentication set successfully.");
+            log.info("Authentication set successfully.");
         } catch (Exception e) {
-            System.out.println("Error setting authentication: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error setting authentication: {}", e.getMessage(), e);
         }
     }
 }
