@@ -8,8 +8,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ICartItemRepository extends JpaRepository<CartItem, String> {
+
+    // Tìm tất cả CartItem theo Cart ID
+    @Query("SELECT ci FROM CartItem ci WHERE ci.cart.id = :cartId")
+    List<CartItem> findAllByCartId(@Param("cartId") String cartId);
+
+    // Tìm tất cả CartItem theo Cart
+    @Query("SELECT ci FROM CartItem ci WHERE ci.cart = :cart")
+    List<CartItem> findAllByCart(@Param("cart") Cart cart);
+
+    // Xóa tất cả CartItem theo Cart
+    void deleteAllByCart(Cart cart);
 }

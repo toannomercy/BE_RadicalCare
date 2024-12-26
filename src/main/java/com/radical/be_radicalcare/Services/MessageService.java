@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,9 +39,11 @@ public class MessageService {
         return messageRepository.save(message);
     }
 
-    public List<ChatGetVm> getChatHistory(String senderId, String recipientId) {
-        List<Message> chatHistory = messageRepository.findBySenderIdAndRecipientIdOrderByTimestampAsc(senderId, recipientId);
+    public List<ChatGetVm> getChatHistory(String user1, String user2) {
+        // Gọi phương thức repository mới để lấy lịch sử chat hai chiều
+        List<Message> chatHistory = messageRepository.findChatHistoryBetween(user1, user2);
 
+        // Chuyển đổi từng Message thành ChatGetVm
         return chatHistory.stream()
                 .map(message -> {
                     List<String> imageUrls = message.getImageUrls(); // Lấy danh sách URL từ MessageImage
@@ -48,22 +52,37 @@ public class MessageService {
                 .collect(Collectors.toList());
     }
 
-    public void saveMessageImages(Message message, List<MultipartFile> images) {
-        for (MultipartFile image : images) {
-            try {
-                // Upload ảnh lên Cloudinary
-                Map<String, Object> uploadResult = cloudinaryService.upload(image);
-                String imageUrl = (String) uploadResult.get("url");
+    public void saveMessageImagesAsync(Message message, List<MultipartFile> images) {
+        List<CompletableFuture<MessageImage>> futures = images.stream()
+                .map(image -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        // Upload ảnh lên Cloudinary
+                        Map<String, Object> uploadResult = cloudinaryService.upload(image);
+                        String imageUrl = (String) uploadResult.get("url");
 
-                // Tạo MessageImage và lưu vào DB
-                MessageImage messageImage = new MessageImage();
-                messageImage.setImageUrl(imageUrl);
-                messageImage.setMessage(message);
+                        // Tạo MessageImage
+                        MessageImage messageImage = new MessageImage();
+                        messageImage.setImageUrl(imageUrl);
+                        messageImage.setMessage(message);
 
-                messageImageRepository.save(messageImage);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image: " + e.getMessage());
-            }
+                        return messageImage;
+                    } catch (IOException e) {
+                        // Ghi log lỗi
+                        System.err.println("Failed to upload image: " + e.getMessage());
+                        return null;
+                    }
+                }))
+                .collect(Collectors.toList());
+
+        // Thu thập kết quả và lưu tất cả vào DB
+        List<MessageImage> messageImages = futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull) // Loại bỏ các ảnh lỗi
+                .collect(Collectors.toList());
+
+        if (!messageImages.isEmpty()) {
+            messageImageRepository.saveAll(messageImages);
         }
     }
+
 }

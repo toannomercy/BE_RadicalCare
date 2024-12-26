@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
     testImplementation 'org.springframework.security:spring-security-test'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -50,6 +51,9 @@ dependencies {
     // Redis Dependencies
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.data:spring-data-redis:3.1.4'
+    // Flyway for database migration
+    implementation "org.flywaydb:flyway-mysql"
+
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2'
 

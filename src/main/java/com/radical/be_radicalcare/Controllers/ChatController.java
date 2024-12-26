@@ -1,6 +1,7 @@
 package com.radical.be_radicalcare.Controllers;
 
 import com.radical.be_radicalcare.Entities.Message;
+import com.radical.be_radicalcare.Services.JwtTokenProvider;
 import com.radical.be_radicalcare.Services.MessageService;
 import com.radical.be_radicalcare.ViewModels.ChatGetVm;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,18 @@ import java.util.Map;
 public class ChatController {
 
     private final MessageService messageService;
-
+    private final JwtTokenProvider jwtTokenProvider;
     // API để gửi tin nhắn và/hoặc hình ảnh
     @PostMapping(value = "/send", consumes = {"multipart/form-data"})
     public ResponseEntity<?> sendMessage(
             @RequestPart(value = "message", required = false) Message message,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+
+        if (message != null) {
+            if (message.getSenderId() == null || message.getRecipientId() == null) {
+                return ResponseEntity.badRequest().body("SenderId and RecipientId are required.");
+            }
+        }
 
         // Kiểm tra nếu cả message và images đều null/empty
         if (message == null && (images == null || images.isEmpty())) {
@@ -53,21 +60,37 @@ public class ChatController {
                 );
             }
             // Lưu ảnh và lấy URL
-            messageService.saveMessageImages(savedMessage, images);
+            messageService.saveMessageImagesAsync(savedMessage, images);
         }
 
         // Trả về phản hồi 200 OK
         return ResponseEntity.ok("Đã gửi thành công");
     }
 
-    // API để lấy lịch sử chat giữa 2 người dùng
-    @GetMapping("/history/{senderId}/{recipientId}")
-    public ResponseEntity<List<ChatGetVm>> getChatHistory(
-            @PathVariable String senderId,
-            @PathVariable String recipientId) {
+    @GetMapping("/userinfo")
+    public ResponseEntity<Map<String, String>> getUserOrStaffInfo(@RequestHeader("Authorization") String token) {
+        // Bỏ tiền tố "Bearer "
+        token = token.startsWith("Bearer ") ? token.substring(7) : token;
 
-        // Gọi service để lấy lịch sử đoạn chat
-        List<ChatGetVm> chatHistory = messageService.getChatHistory(senderId, recipientId);
+        try {
+            String id = jwtTokenProvider.getUserIdOrStaffId(token);
+            return ResponseEntity.ok(Map.of("id", id));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+    // API để lấy lịch sử chat giữa 2 người dùng
+    @GetMapping("/history/{user1}/{user2}")
+    public ResponseEntity<List<ChatGetVm>> getChatHistory(
+            @PathVariable String user1,
+            @PathVariable String user2) {
+
+        // Gọi service để lấy lịch sử đoạn chat hai chiều
+        List<ChatGetVm> chatHistory = messageService.getChatHistory(user1, user2);
+
+        if (chatHistory.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
 
         return ResponseEntity.ok(chatHistory);
     }

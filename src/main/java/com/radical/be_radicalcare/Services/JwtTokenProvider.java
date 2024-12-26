@@ -92,6 +92,22 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
+    public String getUserIdOrStaffId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String role = claims.get("authorities", List.class).get(0).toString(); // Lấy role đầu tiên
+        if ("USER".equals(role)) {
+            return claims.get("userId", String.class);
+        } else if ("ADMIN".equals(role)) {
+            return claims.get("userId", String.class); // Hoặc `staffId` nếu có
+        }
+        throw new IllegalArgumentException("Invalid role: " + role);
+    }
+
     public String getUserIdFromJWT(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(signingKey)

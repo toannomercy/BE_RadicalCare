@@ -19,6 +19,10 @@ import com.radical.be_radicalcare.Services.*;
 import com.radical.be_radicalcare.ViewModels.UserGetVm;
 import com.radical.be_radicalcare.ViewModels.UserPutVm;
 import io.github.cdimascio.dotenv.Dotenv;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,18 +34,11 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import com.radical.be_radicalcare.Entities.Customer;
-import org.springframework.web.client.RestTemplate;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @RestController
@@ -53,13 +50,12 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final IUserRepository userRepository;
-    private final OAuth2UserService oAuth2UserService;
     private final CustomerService customerService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ClientRegistrationRepository clientRegistrationRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> loginMobile(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -68,26 +64,92 @@ public class AuthController {
                     )
             );
 
-            String userId = userService.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"))
-                    .getId();
+            User user = userService.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            String userId = user.getId();
             String customerId = customerService.getCustomerByUserId(userId)
                     .map(Customer::getId)
                     .orElse(null);
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtTokenProvider.generateToken(authentication, userId, customerId);
+            userService.updateOnlineStatus(userId, true);
 
-            return ResponseEntity.ok(new JwtResponse(jwt));
+            String role = user.getRoles().iterator().next().getName().name();
+            return ResponseEntity.ok(new JwtResponse(jwt, user.getFullName(), role));
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid username or Password");
+                    .body("Invalid username or password");
         } catch (Exception e) {
             log.error("Error during authentication: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred: " + e.getMessage());
         }
     }
+
+    @PostMapping("/login-web")
+    public ResponseEntity<?> loginWeb(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response, HttpSession session) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
+
+            User user = userService.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String jwt = jwtTokenProvider.generateToken(authentication, user.getId(), null);
+            String role = user.getRoles().iterator().next().getName().name();
+
+            // Lưu JWT vào Cookie
+            Cookie jwtCookie = new Cookie("token", jwt);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setPath("/");
+            jwtCookie.setSecure(false);
+            jwtCookie.setMaxAge(24 * 60 * 60); // 1 ngày
+            response.addCookie(jwtCookie);
+
+            // Lưu vào session
+            session.setAttribute("username", user.getUsername());
+            session.setAttribute("role", role);
+
+            return ResponseEntity.ok(new JwtResponse(jwt, user.getFullName(), role));
+        } catch (BadCredentialsException e) {
+            log.error("Invalid credentials for user: {}", loginRequest.getUsername());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        } catch (Exception e) {
+            log.error("Error during web login: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/logout-web")
+    public ResponseEntity<?> logoutWeb(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+
+            Cookie jwtCookie = new Cookie("token", null);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge(0);
+            response.addCookie(jwtCookie);
+
+            return ResponseEntity.ok("Logout successful");
+        } catch (Exception e) {
+            log.error("Error during web logout: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred: " + e.getMessage());
+        }
+    }
+
+
+
 
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @GetMapping("/fetch-user")
@@ -122,19 +184,30 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestParam String email) {
-        userService.forgotPassWord(email);
-        return ResponseEntity.ok("Password reset link sent to your email: " + email);
+        try {
+            userService.forgotPassWord(email);
+            return ResponseEntity.ok("Password reset link sent to your email: " + email);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not found: " + email);
+        } catch (Exception e) {
+            log.error("Error during forgot password: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while processing your request.");
+        }
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
-        boolean isTokenValid = userService.isTokenValid(token);
-        if (!isTokenValid) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token không hợp lệ hoặc đã hết hạn.");
+        try {
+            boolean isTokenValid = userService.isTokenValid(token);
+            if (!isTokenValid) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token.");
+            }
+            userService.resetPassword(token, newPassword);
+            return ResponseEntity.ok("Password reset successfully.");
+        } catch (Exception e) {
+            log.error("Error during password reset: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while resetting password.");
         }
-
-        userService.resetPassword(token, newPassword);  // Reset mật khẩu dựa trên token
-        return ResponseEntity.ok("Password reset successfully");
     }
 
     @PutMapping("/update-profile")
@@ -187,71 +260,22 @@ public class AuthController {
         }
     }
 
-    //    @PostMapping("/oauth/google")
-//    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> requestBody) {
-//        try {
-//            String idToken = requestBody.get("idToken");
-//            if (idToken == null || idToken.isEmpty()) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//                        .body(Map.of("success", false, "message", "ID Token is required."));
-//            }
-//
-//            log.info("Received ID Token: {}", idToken);
-//
-//            // Tải Google Public Keys
-//            NetHttpTransport transport = new NetHttpTransport();
-//            JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-//            HttpRequestFactory requestFactory = transport.createRequestFactory();
-//            HttpRequest request = requestFactory.buildGetRequest(new GenericUrl("https://www.googleapis.com/oauth2/v3/certs"));
-//            HttpResponse response = request.execute();
-//            String publicKeys = response.parseAsString();
-//            log.info("Google Public Keys: {}", publicKeys);
-//            log.info("Client ID from .env: {}", dotenv.get("OAUTH2_GOOGLE_CLIENT_ID_WEB"));
-//
-//            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-//                    .setAudience(Collections.singletonList(dotenv.get("OAUTH2_GOOGLE_CLIENT_ID_WEB"))) // Khớp Client ID
-//                    .setIssuer("https://accounts.google.com") // Khớp issuer
-//                    .build();
-//            log.info("GoogleIdTokenVerifier audience: {}", verifier.getAudience());
-//            log.info("GoogleIdTokenVerifier issuer: {}", verifier.getIssuer());
-//            // Xác minh ID Token
-//            GoogleIdToken googleIdToken = verifier.verify(idToken);
-//            if (googleIdToken == null) {
-//                log.error("Invalid ID Token: Signature verification failed");
-//                throw new IllegalArgumentException("Invalid ID Token");
-//            }
-//
-//            // Lấy payload từ ID Token
-//            GoogleIdToken.Payload payload = googleIdToken.getPayload();
-//            log.info("Verified Google ID Token Payload: {}", payload);
-//
-//            String googleId = payload.getSubject();
-//            String email = payload.getEmail();
-//            String fullName = (String) payload.get("name");
-//
-//            // Kiểm tra hoặc tạo user
-//            User user = userService.findByUsername(googleId)
-//                    .orElseGet(() -> {
-//                        log.info("Creating new user with Google ID: {}", googleId);
-//                        User newUser = userService.saveGoogleUser(googleId, email, fullName);
-//                        customerService.createCustomerForUser(newUser);
-//                        return newUser;
-//                    });
-//
-//            // Tạo JWT token
-//            Authentication authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), null);
-//            String jwt = jwtTokenProvider.generateToken(authentication, user.getId(), null);
-//
-//            return ResponseEntity.ok(Map.of(
-//                    "success", true,
-//                    "token", jwt
-//            ));
-//        } catch (Exception e) {
-//            log.error("Error during Google login: {}", e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Map.of("success", false, "message", "Google login failed: " + e.getMessage()));
-//        }
-//    }
+    @GetMapping("/online")
+    public ResponseEntity<List<User>> getOnlineUsers() {
+        List<User> onlineUsers = userService.getOnlineUsers();
+        return ResponseEntity.ok(onlineUsers);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(Authentication authentication) {
+        String userId = ((UserDetails) authentication.getPrincipal()).getUsername();
+
+        // Cập nhật trạng thái offline
+        userService.updateOnlineStatus(userId, false);
+
+        return ResponseEntity.ok("User logged out successfully");
+    }
+
     @PostMapping("/oauth/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> requestBody) {
         try {
@@ -314,5 +338,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Google login failed: " + e.getMessage()));
         }
+    }
+    @GetMapping("/login/oauth2/code/google")
+    public ResponseEntity<?> handleGoogleOAuth2(Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String jwt = jwtTokenProvider.generateToken(
+                authentication,
+                user.getId(),
+                null // Nếu không có Customer ID
+        );
+
+        return ResponseEntity.ok(new JwtResponse(jwt, user.getFullName(), user.getRoles().iterator().next().getName().name()));
     }
 }

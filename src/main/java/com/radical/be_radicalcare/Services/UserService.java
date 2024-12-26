@@ -23,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +68,16 @@ public class UserService implements UserDetailsService {
         return newUser;
     }
 
+    public void updateOnlineStatus(String userId, boolean isOnline) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setOnlineStatus(isOnline);
+        userRepository.save(user);
+    }
+
+    public List<User> getOnlineUsers() {
+        return userRepository.findAllOnlineUsers();
+    }
 
     public void registerUser(RegisterRequest registerRequest) {
         // Tạo đối tượng User và ánh xạ dữ liệu từ RegisterRequest

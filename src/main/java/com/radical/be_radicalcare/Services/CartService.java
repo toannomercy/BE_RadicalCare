@@ -6,6 +6,7 @@ import com.radical.be_radicalcare.Entities.Cart;
 import com.radical.be_radicalcare.Entities.CartItem;
 import com.radical.be_radicalcare.Entities.Vehicle;
 import com.radical.be_radicalcare.Entities.VehicleImage;
+import com.radical.be_radicalcare.Repositories.ICartItemRepository;
 import com.radical.be_radicalcare.Repositories.ICartRepository;
 import com.radical.be_radicalcare.Repositories.IVehicleRepository;
 import com.radical.be_radicalcare.ViewModels.CartItemGetVm;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,7 +33,8 @@ public class CartService {
     private IVehicleRepository vehicleRepository;
     @Autowired
     private ObjectMapper objectMapper;
-
+    @Autowired
+    private ICartItemRepository cartItemRepository;
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
@@ -102,9 +105,8 @@ public class CartService {
     public void saveTemporaryCart(String userId, String chassisNumber, int quantity) {
         String cacheKey = CART_CACHE_PREFIX + userId;
 
-        // Lấy Cart từ Redis
+        // Lấy giỏ hàng tạm thời từ Redis
         Object cachedCart = redisTemplate.opsForValue().get(cacheKey);
-
         Cart cart;
         if (cachedCart instanceof LinkedHashMap) {
             cart = objectMapper.convertValue(cachedCart, Cart.class);
@@ -118,41 +120,45 @@ public class CartService {
             log.info("Created new cart with ID: {}", cart.getId());
         }
 
-        // Lấy thông tin Vehicle từ cơ sở dữ liệu
+        // Lấy thông tin Vehicle từ database
         Vehicle vehicle = vehicleRepository.findById(chassisNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found with chassis number: " + chassisNumber));
 
         // Chuyển đổi Vehicle sang VehicleDto
         VehicleDto vehicleDto = toVehicleDto(vehicle);
 
-        // Tạo CartItem mới
-        CartItem item = new CartItem();
-        item.setId(UUID.randomUUID().toString());
-        item.setVehicleDto(vehicleDto); // Gán DTO thay vì thực thể Vehicle
-        item.setQuantity(quantity);
-        item.setPrice(vehicleDto.getPrice());
-        item.setSubtotal(vehicleDto.getPrice() * quantity);
-        item.setCart(cart);
+        // Kiểm tra xem sản phẩm đã tồn tại trong giỏ hàng hay chưa
+        CartItem existingItem = cart.getItems().stream()
+                .filter(item -> item.getVehicleDto().getChassisNumber().equals(chassisNumber))
+                .findFirst()
+                .orElse(null);
 
-        // Kiểm tra vehicleDto đã được khởi tạo đầy đủ
-        if (item.getVehicleDto() == null) {
-            throw new IllegalStateException("VehicleDto is null before saving to Redis");
+        if (existingItem != null) {
+            // Cập nhật số lượng nếu sản phẩm đã tồn tại
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            existingItem.setSubtotal(existingItem.getPrice() * existingItem.getQuantity());
+        } else {
+            // Thêm sản phẩm mới nếu chưa tồn tại
+            CartItem newItem = new CartItem();
+            newItem.setId(UUID.randomUUID().toString());
+            newItem.setVehicleDto(vehicleDto);
+            newItem.setQuantity(quantity);
+            newItem.setPrice(vehicleDto.getPrice());
+            newItem.setSubtotal(vehicleDto.getPrice() * quantity);
+            cart.getItems().add(newItem);
         }
-        log.info("CartItem created with VehicleDto: {}", item.getVehicleDto());
 
-
-        // Thêm CartItem vào danh sách
-        cart.getItems().add(item);
-
-        // Cập nhật tổng chi phí
-        double totalCost = cart.getItems().stream().mapToDouble(CartItem::getSubtotal).sum();
+        // Cập nhật tổng chi phí giỏ hàng
+        double totalCost = cart.getItems().stream()
+                .mapToDouble(CartItem::getSubtotal)
+                .sum();
         cart.setTotalCost(totalCost);
 
-        // Lưu Cart vào Redis
-        log.info("Saving cart to Redis: {}", cart);
+        // Lưu giỏ hàng vào Redis
         redisTemplate.opsForValue().set(cacheKey, cart, 30, TimeUnit.MINUTES);
-        log.info("Cart saved to Redis with key: {}", cacheKey);
+        log.info("Cart saved to Redis for userId: {}", userId);
     }
+
     public void updateCartItemQuantity(String userId, String cartItemId, int newQuantity) {
         String cacheKey = CART_CACHE_PREFIX + userId;
 
@@ -207,6 +213,7 @@ public class CartService {
             // Lưu lại cart đã được cập nhật
             redisTemplate.opsForValue().set(cacheKey, cart, 30, TimeUnit.MINUTES);
         }
+
     }
 
     public void removeCartItem(String userId, String cartItemId) {
@@ -231,20 +238,129 @@ public class CartService {
         redisTemplate.opsForValue().set(cacheKey, cart, 30, TimeUnit.MINUTES);
     }
 
-//    public void removeVehicleFromTemporaryCart(String userId, String chassisNumber) {
-//        String cacheKey = CART_CACHE_PREFIX + userId;
-//        Cart cart = (Cart) redisTemplate.opsForValue().get(cacheKey);
-//        if (cart != null) {
-//            cart.getItems().removeIf(item -> item.getVehicle().getChassisNumber().equals(chassisNumber));
-//            redisTemplate.opsForValue().set(cacheKey, cart, 30, TimeUnit.MINUTES);
-//        }
-//    }
-//
-//    public void removeVehicleFromPersistentCart(String userId, String chassisNumber) {
-//        Cart cart = cartRepository.findByUserId(userId).orElse(null);
-//        if (cart != null) {
-//            cart.getItems().removeIf(item -> item.getVehicle().getChassisNumber().equals(chassisNumber));
-//            cartRepository.save(cart);
-//        }
-//    }
+    @Transactional
+    public void addItemToCart(CartItemGetVm cartItemVm) {
+        Cart cart = cartRepository.findByUserId(cartItemVm.userId())
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUserId(cartItemVm.userId());
+                    newCart.setTotalCost(0.0);
+                    return cartRepository.save(newCart);
+                });
+
+        CartItem cartItem = new CartItem();
+        cartItem.setCart(cart);
+        cartItem.setVehicleDto(cartItemVm.vehicle());
+        cartItem.setQuantity(cartItemVm.quantity());
+        cartItem.setPrice(cartItemVm.price());
+        cartItem.setSubtotal(cartItemVm.quantity() * cartItemVm.price());
+        cartItemRepository.save(cartItem);
+
+        cart.setTotalCost(cart.getTotalCost() + cartItem.getSubtotal());
+        cartRepository.save(cart);
+    }
+
+    public Cart getCartByUserId(String userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+    }
+
+    @Transactional
+    public void updateCartItem(CartItemGetVm cartItemVm) {
+        // Lấy thông tin giỏ hàng theo userId
+        Cart cart = cartRepository.findByUserId(cartItemVm.userId())
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+
+        // Tìm CartItem trong danh sách của Cart
+        CartItem itemToUpdate = cart.getItems().stream()
+                .filter(item -> item.getVehicleDto() != null &&
+                        item.getVehicleDto().getChassisNumber().equals(cartItemVm.vehicle().getChassisNumber()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Item not found in cart"));
+
+        // Cập nhật số lượng và tổng phụ
+        itemToUpdate.setQuantity(cartItemVm.quantity());
+        itemToUpdate.setSubtotal(cartItemVm.quantity() * itemToUpdate.getPrice());
+
+        // Lưu CartItem đã cập nhật vào repository
+        cartItemRepository.save(itemToUpdate);
+
+        // Cập nhật tổng chi phí của giỏ hàng
+        updateCartTotalCost(cart);
+    }
+
+    @Transactional
+    public void removeItemFromCart(String itemId) {
+        CartItem item = cartItemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
+
+        Cart cart = item.getCart();
+        cartItemRepository.delete(item);
+
+        // Update cart total cost
+        updateCartTotalCost(cart);
+    }
+
+    @Transactional
+    public void clearCart(String userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+
+        cartItemRepository.deleteAllByCart(cart);
+
+        // Reset cart total cost
+        cart.setTotalCost(0.0);
+        cartRepository.save(cart);
+    }
+
+    private void updateCartTotalCost(Cart cart) {
+        double totalCost = cartItemRepository.findAllByCart(cart).stream()
+                .mapToDouble(CartItem::getSubtotal)
+                .sum();
+        cart.setTotalCost(totalCost);
+        cartRepository.save(cart);
+    }
+
+    @Transactional
+    public void checkoutCart(String userId) {
+        String cacheKey = CART_CACHE_PREFIX + userId;
+
+        // Lấy giỏ hàng từ Redis
+        Cart temporaryCart = getTemporaryCart(userId);
+        if (temporaryCart == null || temporaryCart.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Cart is empty or not found for userId: " + userId);
+        }
+
+        // Tạo giỏ hàng trong cơ sở dữ liệu
+        Cart dbCart = cartRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUserId(userId);
+                    newCart.setTotalCost(0.0);
+                    return cartRepository.save(newCart);
+                });
+
+        // Lưu từng sản phẩm vào cơ sở dữ liệu
+        for (CartItem temporaryItem : temporaryCart.getItems()) {
+            CartItem dbCartItem = new CartItem();
+            dbCartItem.setCart(dbCart);
+            dbCartItem.setVehicleDto(temporaryItem.getVehicleDto());
+            dbCartItem.setQuantity(temporaryItem.getQuantity());
+            dbCartItem.setPrice(temporaryItem.getPrice());
+            dbCartItem.setSubtotal(temporaryItem.getSubtotal());
+            cartItemRepository.save(dbCartItem);
+        }
+
+        // Cập nhật tổng chi phí cho giỏ hàng
+        double totalCost = temporaryCart.getItems().stream()
+                .mapToDouble(CartItem::getSubtotal)
+                .sum();
+        dbCart.setTotalCost(totalCost);
+        cartRepository.save(dbCart);
+
+        // Xóa giỏ hàng tạm thời khỏi Redis
+        redisTemplate.delete(cacheKey);
+        log.info("Cart checked out and moved to database for userId: {}", userId);
+    }
+
 }
