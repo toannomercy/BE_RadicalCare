@@ -131,6 +131,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reset-password/shown").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/vehicles/all").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/vehicles/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/category").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/products").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasAuthority("ADMIN")
