@@ -22,6 +22,7 @@ public record VehicleGetVm(
         Long costId,
         Long categoryId,
         Long supplierId,
+        Double price, // Thêm trường price
         String description,
         List<String> warrantyHistory,
         List<String> imageUrls
@@ -38,6 +39,7 @@ public record VehicleGetVm(
                 .isDeleted(vehicle.getIsDeleted())
                 .sold(vehicle.getSold())
                 .costId(vehicle.getCostId() != null ? vehicle.getCostId().getCostId() : null)
+                .price(vehicle.getCostId() != null ? vehicle.getCostId().getPrice() : 0.0) // Đảm bảo không null
                 .categoryId(vehicle.getCategoryId() != null ? vehicle.getCategoryId().getId() : null)
                 .supplierId(vehicle.getSupplierId() != null ? vehicle.getSupplierId().getSupplierId() : null)
                 .warrantyHistory(vehicle.getWarrantyHistory() != null
@@ -46,4 +48,5 @@ public record VehicleGetVm(
                 .imageUrls(vehicle.getImageUrls())
                 .build();
     }
+
 }

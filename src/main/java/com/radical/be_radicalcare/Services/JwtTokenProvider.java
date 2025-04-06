@@ -1,7 +1,6 @@
 package com.radical.be_radicalcare.Services;
 
 import io.jsonwebtoken.*;
-
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +16,6 @@ import java.util.List;
 @Component
 @Slf4j
 public class JwtTokenProvider {
-
 
 //    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 //
@@ -41,7 +39,6 @@ public class JwtTokenProvider {
 //                .compact();
 //    }
     private final Key signingKey;  // Khóa mã hóa JWT
-
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -93,6 +90,22 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.getSubject();
+    }
+
+    public String getUserIdOrStaffId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String role = claims.get("authorities", List.class).get(0).toString(); // Lấy role đầu tiên
+        if ("USER".equals(role)) {
+            return claims.get("userId", String.class);
+        } else if ("ADMIN".equals(role)) {
+            return claims.get("userId", String.class); // Hoặc `staffId` nếu có
+        }
+        throw new IllegalArgumentException("Invalid role: " + role);
     }
 
     public String getUserIdFromJWT(String token) {

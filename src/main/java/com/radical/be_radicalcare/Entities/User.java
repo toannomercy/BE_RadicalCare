@@ -37,6 +37,9 @@ public class User implements UserDetails {
     @ValidUsername
     private String username;
 
+    @Column(name = "online_status", nullable = false)
+    private Boolean onlineStatus = false;
+
     @Column(name = "full_name", length = 50)
     private String fullName;
 

@@ -1,13 +1,14 @@
 package com.radical.be_radicalcare.ViewModels;
 
 import com.radical.be_radicalcare.Entities.CartItem;
+import com.radical.be_radicalcare.Dto.VehicleDto;
 import lombok.Builder;
 
 @Builder
 public record CartItemGetVm(
         String id,
-        VehicleGetVm vehicle,
-        String userId, // Thêm userId vào đây
+        VehicleDto vehicle, // Sử dụng VehicleDto từ DTO package
+        String userId,
         Integer quantity,
         Double price,
         Double subtotal
@@ -15,8 +16,8 @@ public record CartItemGetVm(
     public static CartItemGetVm from(CartItem cartItem) {
         return CartItemGetVm.builder()
                 .id(cartItem.getId())
-                .vehicle(VehicleGetVm.fromEntity(cartItem.getVehicle()))
-                .userId(cartItem.getCart().getUserId()) // Gán userId từ Cart
+                .vehicle(cartItem.getVehicleDto()) // Không cần chuyển đổi thêm nếu đã dùng VehicleDto
+                .userId(cartItem.getCart().getUserId())
                 .quantity(cartItem.getQuantity())
                 .price(cartItem.getPrice())
                 .subtotal(cartItem.getSubtotal())

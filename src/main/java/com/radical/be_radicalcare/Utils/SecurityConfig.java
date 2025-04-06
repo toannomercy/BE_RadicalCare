@@ -1,12 +1,14 @@
 package com.radical.be_radicalcare.Utils;
 
 import com.radical.be_radicalcare.Services.OAuth2UserService;
+import com.radical.be_radicalcare.Services.OAuthService;
 import com.radical.be_radicalcare.Services.UserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -15,6 +17,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +27,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -38,17 +42,25 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final OAuth2UserService oAuth2UserService;
+    private final OAuthService oAuthService;
     private final UserService userService;
+    private final OAuth2UserService oAuth2UserService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
+    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final Dotenv dotenv = Dotenv.load();
 
     @Bean
-    public ClientRegistrationRepository clientRegistrationRepository() {
-        String clientId = dotenv.get("OAUTH2_GOOGLE_CLIENT_ID");
-        String clientSecret = dotenv.get("OAUTH2_GOOGLE_CLIENT_SECRET");
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
 
+    @Bean
+    public ClientRegistrationRepository clientRegistrationRepository() {
+        String clientId = dotenv.get("OAUTH2_GOOGLE_CLIENT_ID_WEB");
+        String clientSecret = dotenv.get("OAUTH2_GOOGLE_CLIENT_SECRET");
+        if (clientId == null || clientSecret == null) {
+            throw new IllegalArgumentException("Missing OAUTH2_GOOGLE_CLIENT_ID_WEB or OAUTH2_GOOGLE_CLIENT_SECRET");
+        }
         ClientRegistration googleClientRegistration = ClientRegistration.withRegistrationId("google")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
@@ -57,13 +69,32 @@ public class SecurityConfig {
                 .tokenUri("https://oauth2.googleapis.com/token")
                 .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
                 .userNameAttributeName("sub")
-                .redirectUri("http://192.168.1.33:8080/login/oauth2/code/google")
+                .redirectUri("http://localhost:8080/login/oauth2/code/google")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .build();
 
         return new InMemoryClientRegistrationRepository(googleClientRegistration);
     }
 
+//    @Bean
+//    public ClientRegistrationRepository clientRegistrationRepository() {
+//        String clientId = dotenv.get("OAUTH2_GOOGLE_CLIENT_ID");
+//        String clientSecret = dotenv.get("OAUTH2_GOOGLE_CLIENT_SECRET");
+//
+//        ClientRegistration googleClientRegistration = ClientRegistration.withRegistrationId("google")
+//                .clientId(clientId)
+//                .clientSecret(clientSecret)
+//                .scope("profile", "email")
+//                .authorizationUri("https://accounts.google.com/o/oauth2/auth")
+//                .tokenUri("https://oauth2.googleapis.com/token")
+//                .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
+//                .userNameAttributeName("sub")
+//                .redirectUri("http://192.168.1.33:8080/login/oauth2/code/google")
+//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+//                .build();
+//
+//        return new InMemoryClientRegistrationRepository(googleClientRegistration);
+//    }
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -92,13 +123,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(@NotNull HttpSecurity http) throws Exception {
         return http
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF
+                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/auth/forgot-password").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .requestMatchers("/api/v1/auth/forgot-password","/api/v1/auth/register","/api/v1/auth/oauth/google", "/api/v1/auth/login","/api/v1/auth/login-web","/api/v1/auth/logout-web","/api/v1/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/oauth/google").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reset-password/shown").permitAll()
+                        .requestMatchers( "/api/v1/vehicles/**").permitAll()
+                        .requestMatchers( "/api/v1/vehicle/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/category").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/products").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasAuthority("ADMIN")
@@ -108,23 +141,32 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login")
-                        .deleteCookies("JSESSIONID")
+                        .logoutUrl("/api/v1/auth/logout")
+                        .logoutSuccessUrl("/api/v1/auth/login")
+                        .deleteCookies("JSESSIONID", "token")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .permitAll()
                 )
                 .formLogin(withDefaults())
-                .oauth2Login(withDefaults())
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("http://localhost:8081/auth/login")
+                        .defaultSuccessUrl("http://localhost:8081/")
+                        .successHandler(customOAuth2SuccessHandler)
+                        .failureUrl("http://localhost:8081/auth/login?error=true")
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(oAuth2UserService)
+                        )
+                )
                 .rememberMe(rememberMe -> rememberMe
                         .key("radical")
                         .rememberMeCookieName("radical")
                         .tokenValiditySeconds(24 * 60 * 60)
                         .userDetailsService(userDetailsService())
                 )
-                .exceptionHandling(exceptionHandling ->
-                        exceptionHandling.accessDeniedPage("/403")
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                        .accessDeniedPage("/error")
                 )
                 .sessionManagement(sessionManagement ->
                         sessionManagement.maximumSessions(1).expiredUrl("/login")

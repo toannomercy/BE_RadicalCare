@@ -2,12 +2,14 @@ package com.radical.be_radicalcare.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.radical.be_radicalcare.Dto.VehicleDto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -76,5 +78,4 @@ public class Vehicle {
     public double getPrice() {
         return costId != null ? costId.getPrice() : 0.0; // Trả về giá từ CostTable, hoặc 0.0 nếu null
     }
-
 }

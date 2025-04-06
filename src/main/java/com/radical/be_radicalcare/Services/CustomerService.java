@@ -25,6 +25,22 @@ public class CustomerService {
         customerRepository.save(customer);  // Lưu thông tin khách hàng
     }
 
+    public void createCustomerForUser(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        Customer customer = new Customer();
+        customer.setUserId(user);
+        customer.setFullName(user.getFullName());
+        customer.setDoB(null);
+        customer.setAddress("N/A");
+        customer.setPhoneNumber("N/A");
+
+        customerRepository.save(customer);
+        log.info("Customer created for user: {}", user.getUsername());
+    }
+
     public void saveOrUpdateCustomer(String userId, CustomerPostVm customerPostVm) {
         log.info("Saving customer with dateOfBirth: {}", customerPostVm.doB());
 
