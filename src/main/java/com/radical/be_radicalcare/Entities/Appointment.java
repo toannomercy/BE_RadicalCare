@@ -30,7 +30,7 @@ public class Appointment {
     private Customer customer;
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount = 0.0;
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @JsonIgnore
     private List<AppointmentDetail> appointmentDetails;

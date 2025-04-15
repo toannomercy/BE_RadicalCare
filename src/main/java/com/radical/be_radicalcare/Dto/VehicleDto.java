@@ -3,8 +3,10 @@ package com.radical.be_radicalcare.Dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -38,6 +40,13 @@ public class VehicleDto {
 
     @JsonProperty("price")
     private Double price;
+
+    @JsonProperty("formattedPrice")
+    public String getFormattedPrice() {
+        if (price == null) return "0";
+        NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+        return formatter.format(price);
+    }
 
     @JsonProperty("description")
     private String description;

@@ -131,6 +131,10 @@ public class UserService implements UserDetailsService {
         return Optional.ofNullable(userRepository.findByUsername(username));
     }
 
+    public Optional<User> findById(String id) {
+        return userRepository.findById(id);
+    }
+
     public void updateUser(User user) {
         userRepository.save(user);  // Lưu thông tin người dùng
     }

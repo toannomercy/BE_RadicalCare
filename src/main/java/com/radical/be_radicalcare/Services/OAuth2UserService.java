@@ -2,7 +2,9 @@ package com.radical.be_radicalcare.Services;
 
 import com.radical.be_radicalcare.Constants.Provider;
 import com.radical.be_radicalcare.Constants.RoleType;
+import com.radical.be_radicalcare.Entities.Customer;
 import com.radical.be_radicalcare.Entities.User;
+import com.radical.be_radicalcare.Repositories.ICustomerRepository;
 import com.radical.be_radicalcare.Repositories.IRoleRepository;
 import com.radical.be_radicalcare.Repositories.IUserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +26,19 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
     private final IUserRepository userRepository;
     private final IRoleRepository roleRepository;
+    private final ICustomerRepository customerRepository;
+    private final CustomerService customerService;
 
     @Autowired
-    public OAuth2UserService(IUserRepository userRepository, IRoleRepository roleRepository) {
+    public OAuth2UserService(
+            IUserRepository userRepository, 
+            IRoleRepository roleRepository,
+            ICustomerRepository customerRepository,
+            CustomerService customerService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.customerRepository = customerRepository;
+        this.customerService = customerService;
     }
 
     @Override
@@ -41,6 +51,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
         User user = userRepository.findByUsername(uuid);
         if (user == null) {
+            // Create new User
             user = new User();
             user.setUsername(uuid);
             user.setEmail(email);
@@ -50,13 +61,23 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             user.setPassword("N/A");
 
             userRepository.save(user);
+            
+            // Create corresponding Customer record
+            customerService.createCustomerForUser(user);
+            
+            log.info("Created new user and customer for Google OAuth2 login: {}", uuid);
         } else {
             log.info("User already exists with UUID: {}", uuid);
             log.info("Full Name: {}", fullName);
+            
+            // Check if customer exists, if not create one
+            if (!customerRepository.findByUserId_Id(user.getId()).isPresent()) {
+                customerService.createCustomerForUser(user);
+                log.info("Created missing Customer record for existing OAuth2 user: {}", uuid);
+            }
         }
 
         return oAuth2User;
     }
-
 }
 

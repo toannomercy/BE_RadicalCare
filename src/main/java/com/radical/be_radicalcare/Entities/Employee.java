@@ -27,7 +27,7 @@ public class Employee{
     private String position;
     @Column(name = "address")
     private String address;
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @JsonIgnore
     private List<Contract> contracts;
@@ -35,7 +35,7 @@ public class Employee{
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ToString.Exclude
     private User userId;
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @JsonIgnore
     private List<Invoice> invoices;

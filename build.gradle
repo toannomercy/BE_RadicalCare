@@ -40,7 +40,11 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
+    testImplementation 'org.seleniumhq.selenium:selenium-firefox-driver:4.16.1'
+    testImplementation 'org.seleniumhq.selenium:selenium-chrome-driver:4.16.1'
+    testImplementation 'io.github.bonigarcia:webdrivermanager:5.6.2'
+    testImplementation 'junit:junit:4.13.2'
     // Cloudinary Dependencies
     implementation 'com.cloudinary:cloudinary-http44:1.29.0'
     implementation 'commons-io:commons-io:2.14.0'
@@ -50,14 +54,9 @@ dependencies {
     // Redis Dependencies
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.data:spring-data-redis:3.1.4'
-    // Flyway for database migration
-    implementation "org.flywaydb:flyway-mysql"
 
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2'
-
-    // Flyway for database migration
-    implementation "org.flywaydb:flyway-mysql"
 
     // JWT Dependencies
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
@@ -74,5 +73,7 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnit()
+    failFast = true
+    maxParallelForks = 1
 }

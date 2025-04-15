@@ -40,7 +40,7 @@ public class Contract {
     @JoinColumn(name = "chassis_number", referencedColumnName = "chassis_number")
     @ToString.Exclude
     private Vehicle chassisNumber;
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "installment_plan_id", referencedColumnName = "id")
     @ToString.Exclude
     private InstallmentPlan installmentPlan;

@@ -318,6 +318,12 @@ public class AuthController {
                 log.info("Creating new User for Google ID: {}", googleId);
                 user = userService.saveGoogleUser(googleId, email, fullName);
                 customerService.createCustomerForUser(user);
+            } else {
+                // Check if customer exists, if not create one
+                if (!customerService.getCustomerByUserId(user.getId()).isPresent()) {
+                    customerService.createCustomerForUser(user);
+                    log.info("Created missing Customer record for existing Google user: {}", googleId);
+                }
             }
 
             // Tạo JWT Token
@@ -347,11 +353,24 @@ public class AuthController {
         String username = authentication.getName();
         User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Get customer ID if it exists
+        String customerId = customerService.getCustomerByUserId(user.getId())
+                .map(Customer::getId)
+                .orElse(null);
+        
+        if (customerId == null) {
+            // If no customer record exists, create one
+            customerService.createCustomerForUser(user);
+            customerId = customerService.getCustomerByUserId(user.getId())
+                    .map(Customer::getId)
+                    .orElse(null);
+        }
 
         String jwt = jwtTokenProvider.generateToken(
                 authentication,
                 user.getId(),
-                null // Nếu không có Customer ID
+                customerId
         );
 
         return ResponseEntity.ok(new JwtResponse(jwt, user.getFullName(), user.getRoles().iterator().next().getName().name()));

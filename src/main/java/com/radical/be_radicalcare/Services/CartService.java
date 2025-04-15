@@ -250,7 +250,14 @@ public class CartService {
 
         CartItem cartItem = new CartItem();
         cartItem.setCart(cart);
-        cartItem.setVehicleDto(cartItemVm.vehicle());
+        
+        // Fix: Cast Object to VehicleDto with validation
+        if (cartItemVm.vehicle() instanceof VehicleDto) {
+            cartItem.setVehicleDto((VehicleDto) cartItemVm.vehicle());
+        } else {
+            throw new IllegalArgumentException("Vehicle is not of type VehicleDto");
+        }
+        
         cartItem.setQuantity(cartItemVm.quantity());
         cartItem.setPrice(cartItemVm.price());
         cartItem.setSubtotal(cartItemVm.quantity() * cartItemVm.price());
@@ -271,10 +278,18 @@ public class CartService {
         Cart cart = cartRepository.findByUserId(cartItemVm.userId())
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
+        // Fix: Cast Object to VehicleDto with validation
+        VehicleDto vehicleDto;
+        if (cartItemVm.vehicle() instanceof VehicleDto) {
+            vehicleDto = (VehicleDto) cartItemVm.vehicle();
+        } else {
+            throw new IllegalArgumentException("Vehicle is not of type VehicleDto");
+        }
+
         // Tìm CartItem trong danh sách của Cart
         CartItem itemToUpdate = cart.getItems().stream()
                 .filter(item -> item.getVehicleDto() != null &&
-                        item.getVehicleDto().getChassisNumber().equals(cartItemVm.vehicle().getChassisNumber()))
+                        item.getVehicleDto().getChassisNumber().equals(vehicleDto.getChassisNumber()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Item not found in cart"));
 
@@ -344,7 +359,15 @@ public class CartService {
         for (CartItem temporaryItem : temporaryCart.getItems()) {
             CartItem dbCartItem = new CartItem();
             dbCartItem.setCart(dbCart);
-            dbCartItem.setVehicleDto(temporaryItem.getVehicleDto());
+            
+            // Make sure vehicleDto is not null
+            if (temporaryItem.getVehicleDto() != null) {
+                dbCartItem.setVehicleDto(temporaryItem.getVehicleDto());
+            } else {
+                log.error("VehicleDto is null for CartItem: {}", temporaryItem.getId());
+                continue; // Skip this item
+            }
+            
             dbCartItem.setQuantity(temporaryItem.getQuantity());
             dbCartItem.setPrice(temporaryItem.getPrice());
             dbCartItem.setSubtotal(temporaryItem.getSubtotal());

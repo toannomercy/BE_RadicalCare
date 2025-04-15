@@ -4,10 +4,13 @@ import com.radical.be_radicalcare.Entities.CartItem;
 import com.radical.be_radicalcare.Dto.VehicleDto;
 import lombok.Builder;
 
+import java.text.NumberFormat;
+import java.util.Locale;
+
 @Builder
 public record CartItemGetVm(
         String id,
-        VehicleDto vehicle, // Sử dụng VehicleDto từ DTO package
+        VehicleDto vehicle,
         String userId,
         Integer quantity,
         Double price,
@@ -22,5 +25,20 @@ public record CartItemGetVm(
                 .price(cartItem.getPrice())
                 .subtotal(cartItem.getSubtotal())
                 .build();
+    }
+    
+    // Format price and subtotal for display
+    public String getFormattedPrice() {
+        return formatCurrency(price);
+    }
+    
+    public String getFormattedSubtotal() {
+        return formatCurrency(subtotal);
+    }
+    
+    private static String formatCurrency(Double value) {
+        if (value == null) return "0";
+        NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+        return formatter.format(value);
     }
 }

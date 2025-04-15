@@ -35,7 +35,7 @@ public class Invoice {
     @ToString.Exclude
     private Employee employee;
 
-    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @JsonIgnore
     private List<InvoiceDetail> invoiceDetails;

@@ -30,7 +30,7 @@ public class Role implements GrantedAuthority {
     @Column(name = "description", length = 250)
     private String description;
 
-    @ManyToMany(mappedBy = "roles", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "roles")
     @ToString.Exclude
     private Set<User> users = new HashSet<>();
 

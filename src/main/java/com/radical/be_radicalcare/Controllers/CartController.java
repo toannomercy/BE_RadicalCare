@@ -75,10 +75,29 @@ public class CartController {
             Cart cart = cartService.getCartByUserId(userId);
             log.info("Cart retrieved successfully for userId: {}", userId);
 
+            List<CartItemGetVm> cartItems = cart.getItems().stream()
+                    .map(CartItemGetVm::from)
+                    .toList();
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "Cart retrieved successfully");
-            response.put("data", cart);
+            response.put("data", Map.of(
+                    "id", cart.getId(),
+                    "userId", cart.getUserId(),
+                    "totalCost", cart.getTotalCost(),
+                    "formattedTotalCost", formatCurrency(cart.getTotalCost()),
+                    "items", cartItems.stream().map(item -> Map.of(
+                            "id", item.id(),
+                            "vehicle", item.vehicle(),
+                            "userId", item.userId(),
+                            "quantity", item.quantity(),
+                            "price", item.price(),
+                            "formattedPrice", item.getFormattedPrice(),
+                            "subtotal", item.subtotal(),
+                            "formattedSubtotal", item.getFormattedSubtotal()
+                    )).toList()
+            ));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Failed to retrieve cart for userId {}: {}", userId, e.getMessage(), e);
@@ -112,7 +131,17 @@ public class CartController {
                         "id", cart.getId(),
                         "userId", cart.getUserId(),
                         "totalCost", cart.getTotalCost(),
-                        "items", cartItems
+                        "formattedTotalCost", formatCurrency(cart.getTotalCost()),
+                        "items", cartItems.stream().map(item -> Map.of(
+                                "id", item.id(),
+                                "vehicle", item.vehicle(),
+                                "userId", item.userId(),
+                                "quantity", item.quantity(),
+                                "price", item.price(),
+                                "formattedPrice", item.getFormattedPrice(),
+                                "subtotal", item.subtotal(),
+                                "formattedSubtotal", item.getFormattedSubtotal()
+                        )).toList()
                 ),
                 "message", "Cart retrieved successfully",
                 "status", 200
@@ -121,6 +150,12 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
+    // Helper method for formatting currency
+    private String formatCurrency(Double value) {
+        if (value == null) return "0";
+        java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        return formatter.format(value);
+    }
 
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     @PutMapping("/cart/update")

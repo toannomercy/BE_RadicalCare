@@ -63,11 +63,11 @@ public class Vehicle {
     private Supplier supplierId;
     @Column(name = "description")
     private String description;
-    @OneToMany(mappedBy = "chassisNumber", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "chassisNumber", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @JsonIgnore
     private List<WarrantyHistory> warrantyHistory;
-    @OneToMany(mappedBy = "chassisNumber", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "chassisNumber", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @JsonIgnore
     private List<VehicleImage> vehicleImages;
